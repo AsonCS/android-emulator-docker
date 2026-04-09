@@ -1,0 +1,97 @@
+FROM ubuntu:24.04
+
+LABEL maintainer="Ason CS"
+
+WORKDIR /
+
+
+#=============================
+# Install Dependences
+#=============================
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    openjdk-21-jdk \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean;
+
+RUN apt update && apt install -y \
+    wget \
+    unzip \
+    curl \
+    bzip2 \
+    libdrm-dev \
+    libxkbcommon-dev \
+    libgbm-dev \
+    libasound-dev \
+    libnss3 \
+    libxcursor1 \
+    libpulse-dev \
+    libxshmfence-dev \
+    xauth \
+    xvfb \
+    x11vnc \
+    fluxbox \
+    wmctrl \
+    libdbus-glib-1-2 \
+    && echo done;
+
+
+#==============================
+# Android SDK ARGS
+#==============================
+ARG API_LEVEL="34"
+ARG BUILD_TOOLS="34.0.0"
+ARG ANDROID_API_LEVEL="android-${API_LEVEL}"
+ARG ANDROID_APIS="default;x86_64"
+ARG EMULATOR_IMAGE="system-images;${ANDROID_API_LEVEL};${ANDROID_APIS}"
+ARG PLATFORM_VERSION="platforms;${ANDROID_API_LEVEL}"
+ARG BUILD_TOOL="build-tools;${BUILD_TOOLS}"
+ARG ANDROID_CMD="commandlinetools-linux-14742923_latest.zip"
+
+
+#==============================
+# Set JAVA_HOME - SDK
+#==============================
+ENV ANDROID_SDK_ROOT=/root/sdk/android
+RUN mkdir -p $ANDROID_SDK_ROOT
+ENV ANDROID_HOME=$ANDROID_SDK_ROOT
+ENV ANDROID_AVD_HOME=$ANDROID_SDK_ROOT/.android/avd
+ENV PATH="$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/emulator:$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/build-tools/${BUILD_TOOLS}"
+
+
+#============================================
+# Install required Android CMD-line tools
+#============================================
+RUN wget https://dl.google.com/android/repository/${ANDROID_CMD} -P /tmp && \
+    unzip -d $ANDROID_SDK_ROOT /tmp/$ANDROID_CMD && \
+    rm -f /tmp/$ANDROID_CMD && \
+    mkdir -p $ANDROID_SDK_ROOT/cmdline-tools/latest && \
+    cd $ANDROID_SDK_ROOT/cmdline-tools && \
+    mv NOTICE.txt source.properties bin lib latest/  && \
+    cd $ANDROID_SDK_ROOT/cmdline-tools/latest && \
+    ls && cd /;
+
+
+#============================================
+# Install required package using SDK manager
+#============================================
+RUN yes Y | sdkmanager --licenses
+RUN yes Y | sdkmanager --verbose emulator platform-tools "${BUILD_TOOL}" "${PLATFORM_VERSION}" "${EMULATOR_IMAGE}"
+
+
+#============================================
+# Create required emulator
+#============================================
+ARG EMULATOR_NAME="tablet"
+ARG EMULATOR_DEVICE="medium_tablet"
+ENV EMULATOR_NAME=$EMULATOR_NAME
+ENV DEVICE_NAME=$EMULATOR_DEVICE
+RUN avdmanager --verbose create avd --force -n "$EMULATOR_NAME" -d "$EMULATOR_DEVICE" -k "$EMULATOR_IMAGE"
+RUN sed -i "s/hw.lcd.height=1600/hw.lcd.height=1080/g" "$ANDROID_AVD_HOME/tablet.avd/config.ini"
+RUN sed -i "s/hw.initialOrientation=portrait/hw.initialOrientation=landscape/g" "$ANDROID_AVD_HOME/tablet.avd/config.ini"
+RUN sed -i "s/hw.lcd.width=2560/hw.lcd.width=1920/g" "$ANDROID_AVD_HOME/tablet.avd/config.ini"
+
+CMD ["tail", "-f", "/dev/null"]
+
+# docker build  --no-cache -t android-emulator .

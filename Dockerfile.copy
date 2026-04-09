@@ -1,0 +1,77 @@
+FROM ubuntu:24.04
+
+LABEL maintainer="Ason CS"
+
+ARG BUILD_TOOLS="34.0.0"
+
+COPY . /root/sdk/android
+WORKDIR /root/sdk/android
+
+#=============================
+# Install Dependences
+#=============================
+RUN apt-get update && apt-get install -y \
+    openjdk-21-jdk \
+    libxcb-cursor0 \
+    libqt5gui5 \
+    libqt5core5a \
+    libqt5dbus5 \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean;
+
+RUN apt update && apt install -y \
+    wget \
+    unzip \
+    curl \
+    bzip2 \
+    libdrm-dev \
+    libxkbcommon-dev \
+    libgbm-dev \
+    libasound-dev \
+    libnss3 \
+    libxcursor1 \
+    libpulse-dev \
+    libxshmfence-dev \
+    xauth \
+    xvfb \
+    x11vnc \
+    fluxbox \
+    wmctrl \
+    libdbus-glib-1-2 \
+    && echo done;
+
+ENV QT_DEBUG_PLUGINS=1
+ENV DISPLAY=:0
+
+
+#==============================
+# Set JAVA_HOME - SDK
+#==============================
+ENV ANDROID_SDK_ROOT=/root/sdk/android
+RUN mkdir -p $ANDROID_SDK_ROOT
+ENV ANDROID_HOME=$ANDROID_SDK_ROOT
+ENV ANDROID_AVD_HOME=$ANDROID_SDK_ROOT/.android/avd
+RUN mkdir -p $ANDROID_AVD_HOME
+ENV PATH="$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/emulator:$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/build-tools/${BUILD_TOOLS}"
+
+
+#============================================
+# Create required emulator
+#============================================
+ARG EMULATOR_NAME="tablet"
+ARG EMULATOR_DEVICE="medium_tablet"
+ARG EMULATOR_IMAGE="system-images;android-34;default;x86_64"
+ENV EMULATOR_NAME=$EMULATOR_NAME
+ENV DEVICE_NAME=$EMULATOR_DEVICE
+RUN avdmanager --verbose create avd --force -n "$EMULATOR_NAME" -d "$EMULATOR_DEVICE" -k "$EMULATOR_IMAGE"
+RUN sed -i "s/hw.lcd.height=1600/hw.lcd.height=1080/g" "$ANDROID_AVD_HOME/$EMULATOR_NAME.avd/config.ini"
+RUN sed -i "s/hw.initialOrientation=portrait/hw.initialOrientation=landscape/g" "$ANDROID_AVD_HOME/$EMULATOR_NAME.avd/config.ini"
+RUN sed -i "s/hw.lcd.width=2560/hw.lcd.width=1920/g" "$ANDROID_AVD_HOME/$EMULATOR_NAME.avd/config.ini"
+
+EXPOSE 5554 5555
+
+CMD ["/bin/bash", "/entrypoint.sh"]
+
+# docker build -t android-emulator-docker .
+# docker run -d --privileged --name android-emulator-docker -p 5555:5555 -p 5554:5554 android-emulator-docker
+# docker exec -u root -t -i android-emulator-docker /bin/bash
