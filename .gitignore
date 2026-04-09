@@ -1,0 +1,51 @@
+root/sdk/android/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+wheels/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# mypy / type checkers
+.mypy_cache/
+.dmypy.json
+.pyre/
+
+# IDEs
+.vscode/
+.idea/
+*.iml
+
+# Temp / runtime artefacts
+/tmp/
+*.mp4
+*.png
+*.apk
+
+# OS
+.DS_Store
+Thumbs.db
