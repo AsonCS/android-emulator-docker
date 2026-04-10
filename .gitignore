@@ -1,4 +1,15 @@
-root/sdk/android/
+root/sdk/android/.android
+root/sdk/android/.temp
+root/sdk/android/build-tools
+root/sdk/android/cmdline-tools
+root/sdk/android/emulator
+root/sdk/android/licenses
+root/sdk/android/platform-tools
+root/sdk/android/platforms
+root/sdk/android/system-images
+root/sdk/android/.knownPackages
+*.log
+apks/
 
 # Python
 __pycache__/

@@ -1,15 +1,20 @@
+#====================================================================================================================================
+# Base
+#====================================================================================================================================
 FROM ubuntu:24.04
 
 LABEL maintainer="Ason CS"
 
-ARG BUILD_TOOLS="34.0.0"
+WORKDIR /app
 
-COPY . .
+COPY ./app /app
+RUN chmod -R 777 /app
+COPY ./root/sdk/android /root/sdk/android
+RUN chmod -R 777 /root/sdk/android
 
-
-#=============================
+#============================================
 # Install Dependences
-#=============================
+#============================================
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
@@ -24,53 +29,98 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 #============================================
 # Python dependencies
 #============================================
-WORKDIR /app
-RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
-
-
-#==============================
-# Set JAVA_HOME - SDK
-#==============================
-ENV ADBKEY="-----BEGIN PRIVATE KEY-----MIIEuwIBADANBgkqhkiG9w0BAQEFAASCBKUwggShAgEAAoIBAQCpTXP4CFxgkDQmjdfFhY/QXL8f6Zx6ZLF6IFHeDz1a4+ZmBJo/NJ6IxymiQquqpmaIchEs2hDVDh5NEiHy++HfEnTpvR7/yMDZtgTThE3fLOF4qUwdCvAxzsdzxumblAwh9SH1K4yapyxfOEdtb5RkyzMB7FPBn46SPIXroiFpsNT8l7KZ7jB9djGZCED5S4bGPblN1GZgJrkv3muh79h8zY9vtv4UNdAahH5s8/QhWTGiiqKFouqMDVO1H8hwp9x37GSwOLV2Tl68N7XCD3Q1vnfTLkLoA5thInq0Iyr2U19QBGOhKo1mKBeQh7Rwczh8eX5cHrBUbqz9umbRBH9dAgMBAAECgf8DYb0MYAcbQ8Yj/wLKjFqescc21ighSb62K/q8ep0WaA5DkrENtRDStj8BkDB07IyIfqeHuAHvhV5+Tock5NeBF2MbjfctpM8eFdBUUgSZR+lQVvocyPJsDEbMvZr4nbDO5ZDN5lxudJb0IWuo7K6+gzlNPxP425n3o0l95aIWrrTizDbFERiEv611L+Bkuxi0bxY7LXo5nEK+hEnkVOPsdwlIAjdjUQLvY+Tut4qTOTnoy97C6z5CwRCklj2peuUOvXVFZnvHRMak37UbRmz21odpNi+QX0OBhTZI4vEkRkvXfHIr3ouhTbg0CYKgTCg6JeDS9P0jVM8ccN7a2kkCgYEA18as91mhuYpQkaZ/ISDoXi8/7LkT52UAhfYCbby/8jBB3g8Fba+4wzdMVgI9wCfWvmvzWfW1u1WI8uJ0lEz0rln+mRHdn0rUlScBy8vedVG64F0ijvbufiK9D0WVk8c4Hq346SDMq/WLjRXPD/gEHX2WYbynUXMqPgN/f8yWDlkCgYEAyNz0hc9CIMIKvW6BfaoNMFyULP3XDGLXRL695ykffn8GTXCmTeNqMTfJO4hqJVqddszJAWdJHR2eKs+dre+uD8nPbcMGqRkpsqWapYnWo0QKwr9VXVNx8CXvjjiyB4zw2PXB6PJJ7NjhgivhJxqFVO1WcRTxYPNgHaqW2DWPQKUCgYEA1Q9Qa00N6+8vbyJAFa4wxA9Tx6NYi/uncJ9h9omR3srXvzSF37DLd7d6oNLFtp+f45ckS4fbUoc7GtmQ037Je/9Q7kQ92bRCBKTnmRxNJPr20+Qi45fgFpymohXLhIgKWgDe7xN8BbAHg+As/U+ggJ4ph4iIjlxxMZqyoraY1MECgYAu5U99sj8JMOSbB6LZ+QrtQKAjxPwhWy5RUYs63iIJQZTyHZvmUXMonJKyAI5vvDFJXFSNrFSopJKaAjEZO/1SmFaClOcIMeTHXdy2S3E+WxN8FnnSuTm/zMuaU+hU1PYiYXZtcawKzTQRVTdTDuEUS/lDm5Ujgo7tPjfLsO2KNQKBgGIROvuey3wK7wbe4p+z3JJmwwg41jP55HWdjhcaHj/pKl0H1xUKYVl422QGtfK9Ifdq3N3FeokngGCuvP7gmlRdRzMydatJMaqSY9S36qYIftLSSubGDMEsjL+m7LGjQMkTdm3PzxiMDWJGZxrjc4y117g7X6yZG/3eMgLgCVBX-----END PRIVATE KEY-----"
-ENV ANDROID_SDK_ROOT=/root/sdk/android
-RUN mkdir -p $ANDROID_SDK_ROOT
-ENV ANDROID_HOME=$ANDROID_SDK_ROOT
-ENV ANDROID_AVD_HOME=$ANDROID_SDK_ROOT/.android/avd
-RUN mkdir -p $ANDROID_AVD_HOME
-ENV PATH="$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/emulator:$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/build-tools/${BUILD_TOOLS}"
-
-ENV DEBIAN_FRONTEND=noninteractive
-ENV API_PORT=8000
+COPY ./app/requirements.txt /requirements.txt
+RUN pip3 install --no-cache-dir --break-system-packages -r /requirements.txt
+RUN rm /requirements.txt
 
 
 #============================================
-# Create required emulator
+# Args vars
 #============================================
-ARG EMULATOR_NAME="tablet"
-ARG EMULATOR_DEVICE="medium_tablet"
-ARG EMULATOR_SERIAL="emulator-5554"
-ARG EMULATOR_IMAGE="system-images;android-34;default;x86_64"
+ARG ANDROID_API_VERSION
+ENV ANDROID_API_VERSION=$ANDROID_API_VERSION
+ARG ANDROID_BUILD_TOOLS
+ENV ANDROID_BUILD_TOOLS=$ANDROID_BUILD_TOOLS
+ARG ANDROID_CMD
+ENV ANDROID_CMD=$ANDROID_CMD
+ARG EMULATOR_ARCH
+ENV EMULATOR_ARCH=$EMULATOR_ARCH
+ARG EMULATOR_DEVICE
+ENV EMULATOR_DEVICE=$EMULATOR_DEVICE
+ARG EMULATOR_NAME
 ENV EMULATOR_NAME=$EMULATOR_NAME
-ENV AVD_NAME=$EMULATOR_NAME
-ENV DEVICE_NAME=$EMULATOR_DEVICE
+ARG EMULATOR_PORT
+ENV EMULATOR_PORT=$EMULATOR_PORT
+ARG EMULATOR_SERIAL
 ENV EMULATOR_SERIAL=$EMULATOR_SERIAL
+ARG EMULATOR_TARGET
+ENV EMULATOR_TARGET=$EMULATOR_TARGET
 
-RUN avdmanager --verbose create avd --force -n "$EMULATOR_NAME" -d "$EMULATOR_DEVICE" -k "$EMULATOR_IMAGE"
-RUN sed -i "s/hw.lcd.height=1600/hw.lcd.height=1080/g" "$ANDROID_AVD_HOME/$EMULATOR_NAME.avd/config.ini"
-RUN sed -i "s/hw.initialOrientation=portrait/hw.initialOrientation=landscape/g" "$ANDROID_AVD_HOME/$EMULATOR_NAME.avd/config.ini"
-RUN sed -i "s/hw.lcd.width=2560/hw.lcd.width=1920/g" "$ANDROID_AVD_HOME/$EMULATOR_NAME.avd/config.ini"
+
+#============================================
+# Env vars
+#============================================
+ENV DISPLAY=:99
+
+ENV ANDROID_HOME="/root/sdk/android"
+ENV ANDROID_AVD_HOME="$ANDROID_HOME/.android/avd"
+ENV ANDROID_SDK_ROOT=$ANDROID_HOME
+
+ENV ANDROID_PATH_BUILD_TOOLS="$ANDROID_HOME/build-tools/$ANDROID_BUILD_TOOLS"
+ENV ANDROID_PATH_CMDLINE_TOOLS="$ANDROID_HOME/cmdline-tools/latest/bin"
+ENV ANDROID_PATH_EMULATOR="$ANDROID_HOME/emulator"
+ENV ANDROID_PATH_PLATFORM_TOOLS="$ANDROID_HOME/platform-tools"
+
+ENV PATH="$PATH:$ANDROID_PATH_BUILD_TOOLS:$ANDROID_PATH_CMDLINE_TOOLS:$ANDROID_PATH_EMULATOR:$ANDROID_PATH_PLATFORM_TOOLS"
 
 
 #============================================
 # Application code
 #============================================
-RUN chmod +x ./entrypoint.sh
+COPY ./root/sdk/android/.apks ./.apks
 
+COPY ./root/sdk/android/entrypoint.sh ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh
+CMD [ "tail", "-f", "/dev/null"]
+# docker build --no-cache --progress=plain --target base -t android-emulator-docker-base .
+# docker run -d --privileged --name android-emulator-docker-base android-emulator-docker-base
+# docker exec -u root -t -i android-emulator-docker-base /bin/bash
+
+
+#====================================================================================================================================
+# Emulator
+#====================================================================================================================================
+FROM base
+
+LABEL maintainer="Ason CS"
+
+RUN rm -rf /root/sdk/android/.apks
+RUN rm -rf /root/sdk/android/.temp
+# RUN rm -rf /root/sdk/android/build-tools
+# RUN rm -rf /root/sdk/android/platforms
+# RUN rm -rf /root/sdk/android/system-images
+RUN rm -rf /root/sdk/android/*.log
+
+RUN mkdir -p /app
+COPY ./app /app
+RUN chmod -R 777 /app
+
+WORKDIR /app
+
+
+#============================================
+# Env vars
+#============================================
+ENV API_PORT=80
+
+
+#============================================
+# Application code
+#============================================
 EXPOSE 5554 5555 8000
 
 CMD ["./entrypoint.sh"]
-
-# docker build -t android-emulator-docker .
+# docker build --no-cache --progress=plain -t android-emulator-docker .
 # docker run -d --privileged --name android-emulator-docker -p 5555:5555 -p 5554:5554 -p 8000:8000 android-emulator-docker
 # docker run -d --privileged --name android-emulator-docker -p 5555:5555 -p 5554:5554 -p 8000:8000 android-emulator-docker tail -f /dev/null
 # docker run -d --privileged --name android-emulator-docker -p 5555:5555 -p 5554:5554 -p 8000:8000 -v ./app:/app android-emulator-docker tail -f /dev/null
