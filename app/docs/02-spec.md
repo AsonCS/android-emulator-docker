@@ -48,9 +48,11 @@ This project provides a REST API interface written in Python to control, monitor
 * **Retrieve Logs (`GET /logs/logcat`):**
     * *Description:* Fetches the current logcat buffer.
     * *Parameters:* `lines` (number of tail lines), `clear` (boolean to wipe logs after fetching).
+    * *Returns:* Plain text response (`text/plain`) containing logcat lines.
 * **Filtered Logs (`GET /logs/logcat/search`):**
     * *Description:* Retrieves logcat outputs filtered by a specific query parameter.
     * *Parameters:* `grep` (string to filter), `level` (e.g., Error, Warning, Info).
+    * *Returns:* Plain text response (`text/plain`) containing filtered logcat lines.
 
 ### 5.5. File System Management
 * **Push to Emulator (`POST /files/emulator/push`):**

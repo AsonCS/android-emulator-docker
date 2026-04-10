@@ -1,12 +1,11 @@
-#====================================================================================================================================
-# Base
-#====================================================================================================================================
 FROM ubuntu:24.04
 
 LABEL maintainer="Ason CS"
 
 WORKDIR /app
 
+COPY ./build_image.sh ./build_image.sh
+RUN chmod 777 ./build_image.sh
 COPY ./app /app
 RUN chmod -R 777 /app
 COPY ./root/sdk/android /root/sdk/android
@@ -29,37 +28,34 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 #============================================
 # Python dependencies
 #============================================
-COPY ./app/requirements.txt /requirements.txt
-RUN pip3 install --no-cache-dir --break-system-packages -r /requirements.txt
-RUN rm /requirements.txt
+RUN pip3 install --no-cache-dir --break-system-packages -r ./requirements.txt
 
 
 #============================================
 # Args vars
 #============================================
-ARG ANDROID_API_VERSION
+ARG ANDROID_API_VERSION="34"
 ENV ANDROID_API_VERSION=$ANDROID_API_VERSION
-ARG ANDROID_BUILD_TOOLS
+ARG ANDROID_BUILD_TOOLS="34.0.0"
 ENV ANDROID_BUILD_TOOLS=$ANDROID_BUILD_TOOLS
-ARG ANDROID_CMD
-ENV ANDROID_CMD=$ANDROID_CMD
-ARG EMULATOR_ARCH
+ARG EMULATOR_ARCH="x86_64"
 ENV EMULATOR_ARCH=$EMULATOR_ARCH
-ARG EMULATOR_DEVICE
+ARG EMULATOR_DEVICE="medium_tablet"
 ENV EMULATOR_DEVICE=$EMULATOR_DEVICE
-ARG EMULATOR_NAME
+ARG EMULATOR_NAME="tablet"
 ENV EMULATOR_NAME=$EMULATOR_NAME
-ARG EMULATOR_PORT
+ARG EMULATOR_PORT="5554"
 ENV EMULATOR_PORT=$EMULATOR_PORT
-ARG EMULATOR_SERIAL
+ARG EMULATOR_SERIAL="emulator-${EMULATOR_PORT}"
 ENV EMULATOR_SERIAL=$EMULATOR_SERIAL
-ARG EMULATOR_TARGET
+ARG EMULATOR_TARGET="default"
 ENV EMULATOR_TARGET=$EMULATOR_TARGET
 
 
 #============================================
 # Env vars
 #============================================
+ENV API_PORT=80
 ENV DISPLAY=:99
 
 ENV ANDROID_HOME="/root/sdk/android"
@@ -77,49 +73,18 @@ ENV PATH="$PATH:$ANDROID_PATH_BUILD_TOOLS:$ANDROID_PATH_CMDLINE_TOOLS:$ANDROID_P
 #============================================
 # Application code
 #============================================
-COPY ./root/sdk/android/.apks ./.apks
+EXPOSE 5554 5555 80
 
-COPY ./root/sdk/android/entrypoint.sh ./entrypoint.sh
 RUN chmod +x ./entrypoint.sh
-CMD [ "tail", "-f", "/dev/null"]
+CMD ["./entrypoint.sh"]
+# docker build -t android-emulator-docker .
+# docker run -d --privileged --name android-emulator-docker -p 5555:5555 -p 5554:5554 -p 8000:80 android-emulator-docker
+# docker run -d --privileged --name android-emulator-docker -p 5555:5555 -p 5554:5554 -p 8000:80 android-emulator-docker tail -f /dev/null
+# docker exec -u root -t -i android-emulator-docker /bin/bash
+
 # docker build --no-cache --progress=plain --target base -t android-emulator-docker-base .
 # docker run -d --privileged --name android-emulator-docker-base android-emulator-docker-base
 # docker exec -u root -t -i android-emulator-docker-base /bin/bash
-
-
-#====================================================================================================================================
-# Emulator
-#====================================================================================================================================
-FROM base
-
-LABEL maintainer="Ason CS"
-
-RUN rm -rf /root/sdk/android/.apks
-RUN rm -rf /root/sdk/android/.temp
-# RUN rm -rf /root/sdk/android/build-tools
-# RUN rm -rf /root/sdk/android/platforms
-# RUN rm -rf /root/sdk/android/system-images
-RUN rm -rf /root/sdk/android/*.log
-
-RUN mkdir -p /app
-COPY ./app /app
-RUN chmod -R 777 /app
-
-WORKDIR /app
-
-
-#============================================
-# Env vars
-#============================================
-ENV API_PORT=80
-
-
-#============================================
-# Application code
-#============================================
-EXPOSE 5554 5555 8000
-
-CMD ["./entrypoint.sh"]
 # docker build --no-cache --progress=plain -t android-emulator-docker .
 # docker run -d --privileged --name android-emulator-docker -p 5555:5555 -p 5554:5554 -p 8000:8000 android-emulator-docker
 # docker run -d --privileged --name android-emulator-docker -p 5555:5555 -p 5554:5554 -p 8000:8000 android-emulator-docker tail -f /dev/null

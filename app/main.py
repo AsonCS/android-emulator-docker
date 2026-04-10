@@ -2,8 +2,12 @@ import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from socketio import ASGIApp
 
 import config
+import screencast
 from api import adb, app as app_router, emulator, env, files
 from api import input as input_router
 from api import logs, screen
@@ -42,6 +46,10 @@ TAGS_METADATA = [
         "name": "Environment",
         "description": "Simulate environment conditions: GPS location and network state.",
     },
+    {
+        "name": "Screencast",
+        "description": "Live screenshot streaming via Socket.IO. View real-time emulator screen with adjustable refresh rates.",
+    },
 ]
 
 
@@ -52,12 +60,14 @@ async def lifespan(_: FastAPI):
     yield
 
 
+# Create FastAPI application
 application = FastAPI(
     title="Android Emulator REST API",
     description=(
         "REST API for controlling, monitoring, and interacting with an Android Emulator "
         "running inside a Docker container. Designed for CI pipelines and automated test runners.\n\n"
-        "**Swagger UI:** `/docs` &nbsp;|&nbsp; **ReDoc:** `/redoc` &nbsp;|&nbsp; **OpenAPI JSON:** `/openapi.json`"
+        "**Swagger UI:** `/docs` &nbsp;|&nbsp; **ReDoc:** `/redoc` &nbsp;|&nbsp; **OpenAPI JSON:** `/openapi.json`\n\n"
+        "**Screencast:** `/screencast` – Real-time screenshot streaming via Socket.IO"
     ),
     version="1.0.0",
     openapi_tags=TAGS_METADATA,
@@ -72,3 +82,50 @@ application.include_router(files.router, prefix="/files", tags=["Files"])
 application.include_router(app_router.router, prefix="/app", tags=["App"])
 application.include_router(input_router.router, prefix="/input", tags=["Input"])
 application.include_router(env.router, prefix="/env", tags=["Environment"])
+
+
+# ── Screencast (Socket.IO) ─────────────────────────────────────────────────────
+
+
+@application.get(
+    "/screencast",
+    tags=["Screencast"],
+    summary="View screencast",
+    responses={
+        200: {
+            "description": "HTML page for real-time screenshot streaming",
+            "content": {"text/html": {}},
+        }
+    },
+)
+async def screencast_page():
+    """
+    Serve the live screencast viewer page.
+    
+    Connects to the server via Socket.IO and displays real-time screenshots
+    at configurable intervals. Automatically starts capturing when a client connects
+    and stops when all clients disconnect.
+    
+    **Features:**
+    - Real-time screenshot streaming as base64-encoded PNG images
+    - Adjustable screenshot interval (0.1 - 10 seconds)
+    - Shows frame count and server statistics
+    - Responsive design for mobile and desktop
+    """
+    static_dir = os.path.join(os.path.dirname(__file__), "static")
+    return FileResponse(os.path.join(static_dir, "index.html"), media_type="text/html")
+
+
+# Mount static files
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+if os.path.exists(static_dir):
+    application.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+
+# ── Socket.IO Setup ───────────────────────────────────────────────────────────
+
+sio = screencast.get_sio()
+screencast.register_screencast_handlers(sio)
+
+# Wrap FastAPI with Socket.IO ASGI middleware
+app = ASGIApp(sio, application, socketio_path="socket.io")

@@ -2,9 +2,6 @@
 
 ./root/sdk/android/.android/
 ./root/sdk/android/.temp/
-./root/sdk/android/build-tools
-./root/sdk/android/platforms
-./root/sdk/android/system-images
 ./root/sdk/android/.knownPackages
 *.log
 

@@ -7,6 +7,7 @@ GET /logs/logcat/search  – fetch logcat filtered by grep string and/or log lev
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, ConfigDict
 
 import adb_runner.runner as adb
@@ -32,23 +33,6 @@ _LOG_EXAMPLE = (
 )
 
 
-# ── Response models ────────────────────────────────────────────────────────────
-
-
-class LogcatResponse(BaseModel):
-    log: str
-    lines: int
-
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "log": _LOG_EXAMPLE,
-                "lines": 3,
-            }
-        }
-    )
-
-
 class ErrorResponse(BaseModel):
     detail: str
 
@@ -62,24 +46,21 @@ class ErrorResponse(BaseModel):
 
 @router.get(
     "/logcat",
-    response_model=LogcatResponse,
+    response_class=PlainTextResponse,
     summary="Retrieve logcat buffer",
     responses={
         200: {
-            "description": "Logcat lines from the emulator",
+            "description": "Logcat lines from the emulator as plain text",
             "content": {
-                "application/json": {
+                "text/plain": {
                     "examples": {
                         "default": {
                             "summary": "Recent log lines",
-                            "value": {
-                                "log": _LOG_EXAMPLE,
-                                "lines": 3,
-                            },
+                            "value": _LOG_EXAMPLE,
                         },
                         "empty": {
                             "summary": "Buffer cleared / empty",
-                            "value": {"log": "", "lines": 0},
+                            "value": "",
                         },
                     }
                 }
@@ -117,36 +98,30 @@ def logcat(
         except adb.ADBError:
             pass
 
-    return {"log": stdout, "lines": len(stdout.splitlines())}
+    return stdout
 
 
 @router.get(
     "/logcat/search",
-    response_model=LogcatResponse,
+    response_class=PlainTextResponse,
     summary="Search logcat output",
     responses={
         200: {
-            "description": "Filtered logcat lines",
+            "description": "Filtered logcat lines as plain text",
             "content": {
-                "application/json": {
+                "text/plain": {
                     "examples": {
                         "grep_only": {
                             "summary": "Filtered by keyword",
-                            "value": {
-                                "log": "04-09 12:00:01.123  1234 I ActivityManager: Start proc com.example.app\n",
-                                "lines": 1,
-                            },
+                            "value": "04-09 12:00:01.123  1234 I ActivityManager: Start proc com.example.app\n",
                         },
                         "level_only": {
                             "summary": "Errors only",
-                            "value": {
-                                "log": "04-09 12:00:02.000  1234 E AndroidRuntime: FATAL EXCEPTION: main\n",
-                                "lines": 1,
-                            },
+                            "value": "04-09 12:00:02.000  1234 E AndroidRuntime: FATAL EXCEPTION: main\n",
                         },
                         "no_results": {
                             "summary": "No matching lines",
-                            "value": {"log": "", "lines": 0},
+                            "value": "",
                         },
                     }
                 }
@@ -209,4 +184,4 @@ def logcat_search(
         needle = grep.lower()
         log_lines = [line for line in log_lines if needle in line.lower()]
 
-    return {"log": "\n".join(log_lines), "lines": len(log_lines)}
+    return "\n".join(log_lines)
