@@ -18,3 +18,11 @@ export ANDROID_PATH_BUILD_TOOLS="$ANDROID_HOME/build-tools/$ANDROID_BUILD_TOOLS"
 export ANDROID_PATH_CMDLINE_TOOLS="$ANDROID_HOME/cmdline-tools/latest/bin"
 export ANDROID_PATH_EMULATOR="$ANDROID_HOME/emulator"
 export ANDROID_PATH_PLATFORM_TOOLS="$ANDROID_HOME/platform-tools"
+
+./root/sdk/android/setup.sh
+nohup ./root/sdk/android/build_image.sh
+
+export API_PORT=8000
+./app/start_server.sh
+
+echo "finished..."

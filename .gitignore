@@ -1,4 +1,3 @@
-root/sdk/android/.apks
 root/sdk/android/.android
 root/sdk/android/.temp
 root/sdk/android/build-tools
@@ -10,7 +9,9 @@ root/sdk/android/platforms
 root/sdk/android/system-images
 root/sdk/android/.knownPackages
 *.log
+*.out
 apks/
+priv-apks/
 
 # Python
 __pycache__/
@@ -48,7 +49,6 @@ coverage.xml
 .pyre/
 
 # IDEs
-.vscode/
 .idea/
 *.iml
 

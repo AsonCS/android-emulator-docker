@@ -81,7 +81,7 @@ def wipe() -> None:
     # 2. Fallback: kill the OS process.
     try:
         subprocess.run(
-            ["pkill", "-f", f"emulator.*-avd.*{config.AVD_NAME}"],
+            ["pkill", "-f", f"emulator.*-avd.*{config.EMULATOR_NAME}"],
             timeout=10,
         )
     except Exception as exc:
@@ -90,7 +90,7 @@ def wipe() -> None:
     # 3. Restart with -wipe-data.
     cmd = [
         config.EMULATOR_PATH,
-        "-avd", config.AVD_NAME,
+        "-avd", config.EMULATOR_NAME,
         "-no-audio",
         "-no-window",
         "-gpu", "swiftshader_indirect",

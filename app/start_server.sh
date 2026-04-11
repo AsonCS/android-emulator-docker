@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [ -z "$API_PORT" ]; then
+    echo "Required variables are missing."
+    exit 1
+fi
+
 # Container entrypoint: starts Xvfb, the Android emulator, waits for boot,
 # then launches the FastAPI server.
 # set -euo pipefail

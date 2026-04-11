@@ -5,7 +5,7 @@ set -euo pipefail
 
 ADB_BIN="${ADB_PATH:-adb}"
 SERIAL="${EMULATOR_SERIAL:-emulator-5554}"
-AVD="${AVD_NAME:-test_avd}"
+AVD="${EMULATOR_NAME:-test_avd}"
 PORT="${API_PORT:-8000}"
 
 # ── 1. Virtual display ────────────────────────────────────────────────────────

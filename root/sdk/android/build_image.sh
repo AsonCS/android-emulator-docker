@@ -1,9 +1,25 @@
 #!/bin/bash
 
+if [ -z "$ANDROID_AVD_HOME" ] ||
+    [ -z "$EMULATOR_NAME" ] ||
+    [ -z "$EMULATOR_DEVICE" ] ||
+    [ -z "$ANDROID_API_VERSION" ] ||
+    [ -z "$EMULATOR_TARGET" ] ||
+    [ -z "$EMULATOR_ARCH" ] ||
+    [ -z "$ANDROID_PATH_CMDLINE_TOOLS" ] ||
+    [ -z "$ANDROID_PATH_PLATFORM_TOOLS" ] ||
+    [ -z "$ANDROID_PATH_EMULATOR" ] ||
+    [ -z "$EMULATOR_PORT" ] ||
+    [ -z "$ANDROID_HOME" ]; then
+    echo "Required variables are missing."
+    exit 1
+fi
+
 EMULATOR_ARGS=$1
+echo "EMULATOR_ARGS $EMULATOR_ARGS"
 
 createEmulator() {
-    echo createEmulator $ANDROID_AVD_HOME $EMULATOR_NAME $EMULATOR_DEVICE $ANDROID_API_VERSION $EMULATOR_TARGET $EMULATOR_ARCH
+    echo "createEmulator | $ANDROID_PATH_CMDLINE_TOOLS $ANDROID_AVD_HOME $EMULATOR_NAME $EMULATOR_DEVICE $ANDROID_API_VERSION $EMULATOR_TARGET $EMULATOR_ARCH"
     mkdir -p $ANDROID_AVD_HOME || echo "$ANDROID_AVD_HOME exixts"
     chmod -R 777 $ANDROID_AVD_HOME
     # $ANDROID_PATH_CMDLINE_TOOLS/avdmanager list devices | grep $EMULATOR_DEVICE
@@ -16,7 +32,7 @@ createEmulator() {
 }
 
 waitForDevice() {
-    echo "Waiting for ADB device"
+    echo "Waiting for ADB device | $ANDROID_PATH_PLATFORM_TOOLS"
     $ANDROID_PATH_PLATFORM_TOOLS/adb wait-for-device
     until [ "$($ANDROID_PATH_PLATFORM_TOOLS/adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]; do
         sleep 5
@@ -24,7 +40,7 @@ waitForDevice() {
 }
 
 runEmulator() {
-    echo runEmulator $EMULATOR_NAME $EMULATOR_PORT
+    echo "runEmulator | $ANDROID_PATH_EMULATOR $EMULATOR_NAME $EMULATOR_PORT"
     # $ANDROID_PATH_EMULATOR/emulator -list-avds
     file="./$EMULATOR_NAME-$(date "+%Y%m%d%H%M%S").log"
     touch $file
@@ -44,7 +60,7 @@ pushFile() {
     remote_dir="$1"
     remote_file="$remote_dir/$2"
     file="$3"
-    echo pushFile $remote_dir $remote_file $file
+    echo "pushFile | $remote_dir $remote_file $file"
     $ANDROID_PATH_PLATFORM_TOOLS/adb shell mkdir -p $remote_dir
     $ANDROID_PATH_PLATFORM_TOOLS/adb shell chmod 777 $remote_dir
     $ANDROID_PATH_PLATFORM_TOOLS/adb shell rm $remote_file
@@ -52,9 +68,23 @@ pushFile() {
     $ANDROID_PATH_PLATFORM_TOOLS/adb shell chmod 777 $remote_file
 }
 
-configEmulator() {
-    echo configEmulator
-    if [ ! "$(ls "$ANDROID_HOME/.apks")" ]; then
+configApks() {
+    echo "configApks | $ANDROID_PATH_PLATFORM_TOOLS $ANDROID_HOME"
+    if [ ! "$(ls "$ANDROID_HOME/apks")" ]; then
+        echo "Empty"
+        return
+    fi
+    for apk in $ANDROID_HOME/apks/*; do
+        if [ -f "$apk" ]; then
+            echo "install $apk"
+            $ANDROID_PATH_PLATFORM_TOOLS/adb install -d -r "$apk"
+        fi
+    done
+}
+
+configPrivApks() {
+    echo "configPrivApks | $ANDROID_HOME $ANDROID_PATH_PLATFORM_TOOLS"
+    if [ ! "$(ls "$ANDROID_HOME/priv-apks")" ]; then
         echo "Empty"
         return
     fi
@@ -68,14 +98,14 @@ configEmulator() {
         echo $($ANDROID_PATH_PLATFORM_TOOLS/adb remount 2>&1)
     fi
     $ANDROID_PATH_PLATFORM_TOOLS/adb shell chmod 777 "/system/priv-app"
-    for folder in $ANDROID_HOME/.apks/*; do
+    for folder in $ANDROID_HOME/priv-apks/*; do
         if [ -d "$folder" ]; then
             package=$(basename $folder)
             echo $package
             # echo $($ANDROID_PATH_PLATFORM_TOOLS/adb uninstall $package 2>&1)
             remote_apks_dir="/system/priv-app"
             remote_permissions_dir="/system/etc/permissions"
-            for file in $ANDROID_HOME/.apks/$package/*; do
+            for file in $ANDROID_HOME/priv-apks/$package/*; do
                 if [ -f "$file" ]; then
                     if [ "${file##*.}" == "apk" ]; then
                         apk=$(basename $file)
@@ -100,7 +130,8 @@ configEmulator() {
 
 createEmulator
 runEmulator
-configEmulator
+configApks
+configPrivApks
 
 # $ANDROID_PATH_PLATFORM_TOOLS/adb emu kill
 

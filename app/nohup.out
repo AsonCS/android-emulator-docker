@@ -1,9 +1,0 @@
-createEmulator ./root/sdk/android/.android/avd tablet medium_tablet 34 default x86_64
-./build_image.sh: line 12: ./root/sdk/android/cmdline-tools/latest/bin/avdmanager: No such file or directory
-sed: can't read ./root/sdk/android/.android/avd/tablet.avd/config.ini: No such file or directory
-sed: can't read ./root/sdk/android/.android/avd/tablet.avd/config.ini: No such file or directory
-sed: can't read ./root/sdk/android/.android/avd/tablet.avd/config.ini: No such file or directory
-runEmulator tablet 5554
-Emulator logs in ./tablet-20260411072227.log
-Waiting for ADB device
-./build_image.sh: line 20: ./root/sdk/android/platform-tools/adb: No such file or directory

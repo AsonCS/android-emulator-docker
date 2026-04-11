@@ -1,11 +1,20 @@
 #!/bin/bash
 
-source ./config.sh
+if [ -z "$ANDROID_HOME" ] ||
+    [ -z "$ANDROID_CMD" ] ||
+    [ -z "$ANDROID_PATH_CMDLINE_TOOLS" ] ||
+    [ -z "$ANDROID_BUILD_TOOLS" ] ||
+    [ -z "$ANDROID_API_VERSION" ] ||
+    [ -z "$EMULATOR_TARGET" ] ||
+    [ -z "$EMULATOR_ARCH" ]; then
+    echo "Required variables are missing."
+    exit 1
+fi
 
 mkdir -p $ANDROID_HOME
 
 installCommandlineTools() {
-    echo installCommandlineTools $ANDROID_CMD
+    echo "installCommandlineTools | $ANDROID_CMD $ANDROID_HOME"
     rm -rf $ANDROID_HOME/cmdline-tools
     mkdir -p $ANDROID_HOME/cmdline-tools/latest
     chmod -R 777 $ANDROID_HOME/cmdline-tools
@@ -18,15 +27,17 @@ installCommandlineTools() {
 }
 
 installPackagesWithSdkManager() {
-    echo installPackagesWithSdkManager $ANDROID_BUILD_TOOLS $ANDROID_API_VERSION $EMULATOR_TARGET $EMULATOR_ARCH
+    echo "installPackagesWithSdkManager | $ANDROID_PATH_CMDLINE_TOOLS $ANDROID_BUILD_TOOLS $ANDROID_API_VERSION $EMULATOR_TARGET $EMULATOR_ARCH"
     yes Y | $ANDROID_PATH_CMDLINE_TOOLS/sdkmanager --licenses
     yes Y | $ANDROID_PATH_CMDLINE_TOOLS/sdkmanager --verbose "emulator" "platform-tools" "build-tools;$ANDROID_BUILD_TOOLS" "platforms;android-$ANDROID_API_VERSION" "system-images;android-$ANDROID_API_VERSION;$EMULATOR_TARGET;$EMULATOR_ARCH"
     # $ANDROID_PATH_CMDLINE_TOOLS/sdkmanager --list | grep android-${ANDROID_API_VERSION}
 }
 
+mkdir -p $ANDROID_HOME/apks
+mkdir -p $ANDROID_HOME/priv-apks
+
 installCommandlineTools
 installPackagesWithSdkManager
-./app/build_image.sh
 
 ls $ANDROID_HOME
 

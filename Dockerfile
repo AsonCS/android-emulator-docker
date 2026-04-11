@@ -19,6 +19,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpulse0 \
     libgles2 \
     xvfb \
+    wget \
+    unzip \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean;
 
@@ -30,31 +32,20 @@ RUN pip3 install --no-cache-dir --break-system-packages -r ./requirements.txt
 
 
 #============================================
-# Args vars
-#============================================
-ARG ANDROID_API_VERSION="34"
-ENV ANDROID_API_VERSION=$ANDROID_API_VERSION
-ARG ANDROID_BUILD_TOOLS="34.0.0"
-ENV ANDROID_BUILD_TOOLS=$ANDROID_BUILD_TOOLS
-ARG EMULATOR_ARCH="x86_64"
-ENV EMULATOR_ARCH=$EMULATOR_ARCH
-ARG EMULATOR_DEVICE="medium_tablet"
-ENV EMULATOR_DEVICE=$EMULATOR_DEVICE
-ARG EMULATOR_NAME="tablet"
-ENV EMULATOR_NAME=$EMULATOR_NAME
-ARG EMULATOR_PORT="5554"
-ENV EMULATOR_PORT=$EMULATOR_PORT
-ARG EMULATOR_SERIAL="emulator-${EMULATOR_PORT}"
-ENV EMULATOR_SERIAL=$EMULATOR_SERIAL
-ARG EMULATOR_TARGET="default"
-ENV EMULATOR_TARGET=$EMULATOR_TARGET
-
-
-#============================================
 # Env vars
 #============================================
 ENV API_PORT=80
 ENV DISPLAY=:99
+
+ENV ANDROID_API_VERSION="34"
+ENV ANDROID_BUILD_TOOLS="34.0.0"
+ENV ANDROID_CMD="commandlinetools-linux-14742923_latest.zip"
+ENV EMULATOR_ARCH="x86_64"
+ENV EMULATOR_DEVICE="medium_tablet"
+ENV EMULATOR_NAME="tablet"
+ENV EMULATOR_PORT="5554"
+ENV EMULATOR_SERIAL="emulator-${EMULATOR_PORT}"
+ENV EMULATOR_TARGET="default"
 
 ENV ANDROID_HOME="/root/sdk/android"
 ENV ANDROID_AVD_HOME="$ANDROID_HOME/.android/avd"
@@ -73,11 +64,25 @@ ENV PATH="$PATH:$ANDROID_PATH_BUILD_TOOLS:$ANDROID_PATH_CMDLINE_TOOLS:$ANDROID_P
 #============================================
 EXPOSE 5554 5555 80
 
-RUN chmod +x ./entrypoint.sh
+HEALTHCHECK --interval=10s --retries=30 --start-period=5m --timeout=3s \
+  CMD curl -f http://localhost/emulator/status || exit 1
+
 CMD ["./entrypoint.sh"]
+
+
+#============================================
+# Application code
+#============================================
+# docker build -t android-emulator-docker:$(date "+%Y%m%d%H%M%S") .
+# docker run -d --rm --privileged --name android-emulator-docker -p 8000:80 android-emulator-docker:<tag>
+# docker tag android-emulator-docker:<tag> ghcr.io/agilecontent/adm-devicecontrol:<tag>
+# docker push ghcr.io/agilecontent/adm-devicecontrol:<tag>
+
+# ============================================================================================================================
+
 # docker build -t android-emulator-docker .
 # docker run -d --rm --privileged --name android-emulator-docker -p 5555:5555 -p 5554:5554 -p 8000:80 android-emulator-docker
-# docker run -d --privileged --name android-emulator-docker -p 5555:5555 -p 5554:5554 -p 8000:80 android-emulator-docker tail -f /dev/null
+# docker run -d --privileged --name android-emulator-docker -p 8000:80 -v ./app:/app -v ./root/sdk/android:/root/sdk/android android-emulator-docker tail -f /dev/null
 # docker exec -u root -t -i android-emulator-docker /bin/bash
 
 # docker build --no-cache --progress=plain --target base -t android-emulator-docker-base .
