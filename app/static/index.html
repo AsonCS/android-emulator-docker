@@ -149,6 +149,15 @@
             transform: translateY(0);
         }
 
+        .button.secondary {
+            background: #2f7a5d;
+        }
+
+        .button.secondary:hover {
+            background: #26654d;
+            box-shadow: 0 4px 12px rgba(47, 122, 93, 0.3);
+        }
+
         .screen-container {
             background: #000;
             border-radius: 8px;
@@ -204,6 +213,61 @@
             margin-top: 30px;
             padding-top: 20px;
             border-top: 2px solid #eee;
+        }
+
+        .logcat-panel {
+            margin-top: 20px;
+            border: 2px solid #e6e6e6;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #101417;
+            color: #e6edf3;
+        }
+
+        .logcat-toolbar {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 12px;
+            background: #1a232a;
+            border-bottom: 1px solid #2c3a45;
+        }
+
+        .logcat-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #d7dee5;
+        }
+
+        .logcat-filter {
+            flex: 1;
+            min-width: 220px;
+            padding: 8px 10px;
+            border: 1px solid #3b4d5c;
+            border-radius: 6px;
+            background: #0f151a;
+            color: #e6edf3;
+        }
+
+        .logcat-filter:focus {
+            outline: none;
+            border-color: #58a6ff;
+        }
+
+        .logcat-stream {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.45;
+            padding: 12px;
+            min-height: 180px;
+            max-height: 260px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
         }
 
         .stat-item {
@@ -283,6 +347,24 @@
                 <div class="loading" id="loading">Connecting to emulator...</div>
             </div>
 
+            <div class="logcat-panel">
+                <div class="logcat-toolbar">
+                    <label class="logcat-toggle" for="logcatToggle">
+                        <input type="checkbox" id="logcatToggle">
+                        Stream logcat
+                    </label>
+                    <input
+                        type="text"
+                        id="logcatFilter"
+                        class="logcat-filter"
+                        placeholder="Filter logs (case-insensitive contains)"
+                    >
+                    <button class="button secondary" id="applyLogcatFilterBtn" type="button">Apply Filter</button>
+                    <button class="button" id="clearLogcatBtn" type="button" style="background: #5f6b76;">Clear View</button>
+                </div>
+                <div class="logcat-stream" id="logcatStream">Logcat streaming is disabled.</div>
+            </div>
+
             <div class="stats">
                 <div class="stat-item">
                     <div class="stat-value" id="frameCount">0</div>
@@ -305,6 +387,11 @@
         let frameCount = 0;
         let isConnected = false;
         let pointerStart = null;
+        let logcatEnabled = false;
+        let logcatBuffer = [];
+        const MAX_LOGCAT_LINES = 600;
+        let pendingLogcatLines = [];
+        let logcatRenderScheduled = false;
 
         const SWIPE_DISTANCE_THRESHOLD = 12;
         const MIN_SWIPE_DURATION_MS = 80;
@@ -314,6 +401,7 @@
             isConnected = true;
             updateStatusIndicator();
             showError("");
+            getStatus();
             console.log("Connected to screencast server");
         });
 
@@ -344,7 +432,35 @@
         socket.on("status", (data) => {
             document.getElementById("clientCount").textContent = data.connected_clients;
             document.getElementById("currentInterval").textContent = data.screenshot_interval.toFixed(1);
+            const toggle = document.getElementById("logcatToggle");
+            const filterInput = document.getElementById("logcatFilter");
+            if (typeof data.logcat_enabled === "boolean") {
+                logcatEnabled = data.logcat_enabled;
+                toggle.checked = data.logcat_enabled;
+            }
+            if (typeof data.logcat_filter === "string") {
+                filterInput.value = data.logcat_filter;
+            }
             showError(`Active: ${data.broadcast_active ? "Yes" : "No"}`);
+        });
+
+        socket.on("logcat_status", (data) => {
+            logcatEnabled = !!data.enabled;
+            const toggle = document.getElementById("logcatToggle");
+            const filterInput = document.getElementById("logcatFilter");
+            toggle.checked = logcatEnabled;
+            if (typeof data.filter === "string") {
+                filterInput.value = data.filter;
+            }
+            renderLogcatPlaceholder();
+        });
+
+        socket.on("logcat_lines", (data) => {
+            if (!logcatEnabled || !data || !Array.isArray(data.lines) || data.lines.length === 0) {
+                return;
+            }
+            pendingLogcatLines.push(...data.lines);
+            scheduleLogcatRender();
         });
 
         // Error handler
@@ -387,6 +503,95 @@
             } else {
                 errorBox.classList.remove("show");
             }
+        }
+
+        function renderLogcatPlaceholder() {
+            const stream = document.getElementById("logcatStream");
+            if (!logcatEnabled) {
+                stream.textContent = "Logcat streaming is disabled.";
+                return;
+            }
+
+            if (logcatBuffer.length === 0 && pendingLogcatLines.length === 0) {
+                stream.textContent = "Logcat streaming enabled. Waiting for lines...";
+            }
+        }
+
+        function scheduleLogcatRender() {
+            if (logcatRenderScheduled) {
+                return;
+            }
+            logcatRenderScheduled = true;
+            requestAnimationFrame(() => {
+                logcatRenderScheduled = false;
+                flushPendingLogcatLines();
+            });
+        }
+
+        function flushPendingLogcatLines() {
+            if (!pendingLogcatLines.length) {
+                return;
+            }
+
+            const stream = document.getElementById("logcatStream");
+            const shouldAutoScroll = stream.scrollTop + stream.clientHeight >= stream.scrollHeight - 8;
+
+            logcatBuffer.push(...pendingLogcatLines);
+            pendingLogcatLines = [];
+
+            if (logcatBuffer.length > MAX_LOGCAT_LINES) {
+                logcatBuffer = logcatBuffer.slice(logcatBuffer.length - MAX_LOGCAT_LINES);
+            }
+
+            stream.textContent = logcatBuffer.join("\n");
+
+            if (shouldAutoScroll) {
+                stream.scrollTop = stream.scrollHeight;
+            }
+        }
+
+        function sendLogcatConfig() {
+            const filterValue = document.getElementById("logcatFilter").value.trim();
+            socket.emit("set_logcat", {
+                enabled: logcatEnabled,
+                filter: filterValue,
+            });
+        }
+
+        function setupLogcatControls() {
+            const toggle = document.getElementById("logcatToggle");
+            const filterInput = document.getElementById("logcatFilter");
+            const applyBtn = document.getElementById("applyLogcatFilterBtn");
+            const clearBtn = document.getElementById("clearLogcatBtn");
+
+            toggle.checked = false;
+            logcatEnabled = false;
+            renderLogcatPlaceholder();
+
+            toggle.addEventListener("change", () => {
+                logcatEnabled = toggle.checked;
+                if (!logcatEnabled) {
+                    pendingLogcatLines = [];
+                }
+                renderLogcatPlaceholder();
+                sendLogcatConfig();
+            });
+
+            applyBtn.addEventListener("click", () => {
+                sendLogcatConfig();
+            });
+
+            filterInput.addEventListener("keydown", (event) => {
+                if (event.key === "Enter") {
+                    sendLogcatConfig();
+                }
+            });
+
+            clearBtn.addEventListener("click", () => {
+                pendingLogcatLines = [];
+                logcatBuffer = [];
+                renderLogcatPlaceholder();
+            });
         }
 
         function clamp(value, min, max) {
@@ -528,6 +733,7 @@
         // Initialize
         updateStatusIndicator();
         setupImageInputControls();
+        setupLogcatControls();
     </script>
 </body>
 </html>
