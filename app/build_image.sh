@@ -1,5 +1,7 @@
 #!/bin/bash
 
+EMULATOR_ARGS=$1
+
 createEmulator() {
     echo createEmulator $ANDROID_AVD_HOME $EMULATOR_NAME $EMULATOR_DEVICE $ANDROID_API_VERSION $EMULATOR_TARGET $EMULATOR_ARCH
     mkdir -p $ANDROID_AVD_HOME || echo "$ANDROID_AVD_HOME exixts"
@@ -29,13 +31,11 @@ runEmulator() {
     $ANDROID_PATH_EMULATOR/emulator \
         -avd "$EMULATOR_NAME" \
         -port $EMULATOR_PORT \
-        -no-audio \
-        -no-window \
         -no-boot-anim \
         -writable-system \
-        -no-boot-anim \
         -gpu swiftshader_indirect \
-        -no-snapshot &> $file \
+        -no-snapshot \
+        $EMULATOR_ARGS &> $file \
         & echo "Emulator logs in $file" 
     waitForDevice
 }

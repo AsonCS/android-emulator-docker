@@ -153,19 +153,25 @@
             background: #000;
             border-radius: 8px;
             overflow: hidden;
-            aspect-ratio: 9 / 16;
-            max-height: 600px;
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
+            width: 100%;
+            min-height: 260px;
+            max-height: 72vh;
         }
 
         .screen-container img {
-            width: 100%;
-            height: 100%;
+            width: auto;
+            height: auto;
+            max-width: 100%;
+            max-height: 72vh;
             object-fit: contain;
             display: none;
+            cursor: crosshair;
+            touch-action: none;
+            user-select: none;
         }
 
         .screen-container img.active {
@@ -298,6 +304,10 @@
         const socket = io();
         let frameCount = 0;
         let isConnected = false;
+        let pointerStart = null;
+
+        const SWIPE_DISTANCE_THRESHOLD = 12;
+        const MIN_SWIPE_DURATION_MS = 80;
 
         // Connection handlers
         socket.on("connect", () => {
@@ -316,7 +326,10 @@
         // Screenshot handler
         socket.on("screenshot", (data) => {
             const img = document.getElementById("screenshot");
+            const loading = document.getElementById("loading");
             img.src = `data:image/png;base64,${data.image}`;
+            img.classList.add("active");
+            loading.style.display = "none";
             frameCount++;
             document.getElementById("frameCount").textContent = frameCount;
         });
@@ -376,8 +389,145 @@
             }
         }
 
+        function clamp(value, min, max) {
+            return Math.min(Math.max(value, min), max);
+        }
+
+        function getEmulatorCoordinatesFromEvent(event) {
+            const img = document.getElementById("screenshot");
+            if (!img || img.naturalWidth === 0 || img.naturalHeight === 0) {
+                return null;
+            }
+
+            const rect = img.getBoundingClientRect();
+            if (rect.width <= 0 || rect.height <= 0) {
+                return null;
+            }
+
+            const xOnImage = clamp(event.clientX - rect.left, 0, rect.width);
+            const yOnImage = clamp(event.clientY - rect.top, 0, rect.height);
+
+            const x = Math.round((xOnImage / rect.width) * img.naturalWidth);
+            const y = Math.round((yOnImage / rect.height) * img.naturalHeight);
+
+            return {
+                x: clamp(x, 0, img.naturalWidth - 1),
+                y: clamp(y, 0, img.naturalHeight - 1),
+            };
+        }
+
+        async function sendTap(x, y) {
+            const response = await fetch("/input/tap", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ x, y }),
+            });
+
+            if (!response.ok) {
+                const payload = await response.json().catch(() => ({}));
+                throw new Error(payload.detail || "Failed to send tap event");
+            }
+        }
+
+        async function sendSwipe(x1, y1, x2, y2, durationMs) {
+            const response = await fetch("/input/swipe", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    x1,
+                    y1,
+                    x2,
+                    y2,
+                    duration_ms: durationMs,
+                }),
+            });
+
+            if (!response.ok) {
+                const payload = await response.json().catch(() => ({}));
+                throw new Error(payload.detail || "Failed to send swipe event");
+            }
+        }
+
+        async function handlePointerUp(event) {
+            const img = document.getElementById("screenshot");
+            if (!pointerStart) {
+                return;
+            }
+
+            const endCoords = getEmulatorCoordinatesFromEvent(event);
+            const endClientX = event.clientX;
+            const endClientY = event.clientY;
+            const start = pointerStart;
+            pointerStart = null;
+
+            if (!endCoords) {
+                return;
+            }
+
+            const dx = endClientX - start.clientX;
+            const dy = endClientY - start.clientY;
+            const distance = Math.hypot(dx, dy);
+
+            try {
+                if (distance < SWIPE_DISTANCE_THRESHOLD) {
+                    await sendTap(start.coords.x, start.coords.y);
+                } else {
+                    const elapsed = Date.now() - start.time;
+                    const durationMs = Math.max(MIN_SWIPE_DURATION_MS, elapsed);
+                    await sendSwipe(
+                        start.coords.x,
+                        start.coords.y,
+                        endCoords.x,
+                        endCoords.y,
+                        durationMs
+                    );
+                }
+                showError("");
+            } catch (err) {
+                showError(`Input error: ${err.message}`);
+            } finally {
+                if (img.hasPointerCapture(event.pointerId)) {
+                    img.releasePointerCapture(event.pointerId);
+                }
+            }
+        }
+
+        function setupImageInputControls() {
+            const img = document.getElementById("screenshot");
+
+            img.addEventListener("pointerdown", (event) => {
+                if (!img.classList.contains("active")) {
+                    return;
+                }
+
+                const coords = getEmulatorCoordinatesFromEvent(event);
+                if (!coords) {
+                    return;
+                }
+
+                pointerStart = {
+                    clientX: event.clientX,
+                    clientY: event.clientY,
+                    coords,
+                    time: Date.now(),
+                };
+
+                img.setPointerCapture(event.pointerId);
+                event.preventDefault();
+            });
+
+            img.addEventListener("pointerup", (event) => {
+                handlePointerUp(event);
+            });
+
+            img.addEventListener("pointercancel", () => {
+                pointerStart = null;
+            });
+        }
+
         // Initialize
         updateStatusIndicator();
+        setupImageInputControls();
     </script>
 </body>
 </html>

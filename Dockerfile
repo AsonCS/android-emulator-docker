@@ -4,8 +4,6 @@ LABEL maintainer="Ason CS"
 
 WORKDIR /app
 
-COPY ./build_image.sh ./build_image.sh
-RUN chmod 777 ./build_image.sh
 COPY ./app /app
 RUN chmod -R 777 /app
 COPY ./root/sdk/android /root/sdk/android
@@ -78,7 +76,7 @@ EXPOSE 5554 5555 80
 RUN chmod +x ./entrypoint.sh
 CMD ["./entrypoint.sh"]
 # docker build -t android-emulator-docker .
-# docker run -d --privileged --name android-emulator-docker -p 5555:5555 -p 5554:5554 -p 8000:80 android-emulator-docker
+# docker run -d --rm --privileged --name android-emulator-docker -p 5555:5555 -p 5554:5554 -p 8000:80 android-emulator-docker
 # docker run -d --privileged --name android-emulator-docker -p 5555:5555 -p 5554:5554 -p 8000:80 android-emulator-docker tail -f /dev/null
 # docker exec -u root -t -i android-emulator-docker /bin/bash
 

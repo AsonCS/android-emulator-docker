@@ -27,7 +27,7 @@ def get_sio() -> AsyncServer:
     return AsyncServer(
         async_mode="asgi",
         cors_allowed_origins="*",
-        logger=True,
+        logger=False,
         engineio_logger=False,
     )
 
