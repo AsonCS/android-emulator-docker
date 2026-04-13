@@ -39,6 +39,7 @@ mkdir -p $ANDROID_HOME/priv-apks
 installCommandlineTools
 installPackagesWithSdkManager
 
+echo "ls $ANDROID_HOME"
 ls $ANDROID_HOME
 
 echo "finished..."

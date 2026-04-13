@@ -1,6 +1,7 @@
 FROM ubuntu:24.04
 
 LABEL maintainer="Ason CS"
+LABEL org.opencontainers.image.description="Android 9\nDevice Control 2.0.80.4 UID Kooli Staging\nWe Update 2.0.43.4 UID\nSelf Provision 1.3 UID\nApp Persister 1.1.0 UID"
 
 WORKDIR /app
 
@@ -37,10 +38,12 @@ RUN pip3 install --no-cache-dir --break-system-packages -r ./requirements.txt
 ENV API_PORT=80
 ENV DISPLAY=:99
 
-ENV ANDROID_API_VERSION="34"
+ENV ANDROID_API_VERSION="28"
+# ENV ANDROID_API_VERSION="34"
 ENV ANDROID_BUILD_TOOLS="34.0.0"
 ENV ANDROID_CMD="commandlinetools-linux-14742923_latest.zip"
-ENV EMULATOR_ARCH="x86_64"
+ENV EMULATOR_ARCH="x86"
+# ENV EMULATOR_ARCH="x86_64"
 ENV EMULATOR_DEVICE="medium_tablet"
 ENV EMULATOR_NAME="tablet"
 ENV EMULATOR_PORT="5554"
@@ -64,7 +67,7 @@ ENV PATH="$PATH:$ANDROID_PATH_BUILD_TOOLS:$ANDROID_PATH_CMDLINE_TOOLS:$ANDROID_P
 #============================================
 EXPOSE 5554 5555 80
 
-HEALTHCHECK --interval=10s --retries=30 --start-period=5m --timeout=3s \
+HEALTHCHECK --interval=10s --retries=30 --start-period=10m --timeout=3s \
   CMD curl -f http://localhost/emulator/status || exit 1
 
 CMD ["./entrypoint.sh"]
@@ -73,13 +76,14 @@ CMD ["./entrypoint.sh"]
 #============================================
 # Application code
 #============================================
-# docker build -t android-emulator-docker:$(date "+%Y%m%d%H%M%S") .
+# docker build -t android-emulator-docker:A9-DC_WU_SP_AP-UID-KooliStaging .
 # docker run -d --rm --privileged --name android-emulator-docker -p 8000:80 android-emulator-docker:<tag>
 # docker tag android-emulator-docker:<tag> ghcr.io/agilecontent/adm-devicecontrol:<tag>
 # docker push ghcr.io/agilecontent/adm-devicecontrol:<tag>
 
 # ============================================================================================================================
 
+# docker build -t android-emulator-docker:$(date "+%Y%m%d%H%M%S") .
 # docker build -t android-emulator-docker .
 # docker run -d --rm --privileged --name android-emulator-docker -p 5555:5555 -p 5554:5554 -p 8000:80 android-emulator-docker
 # docker run -d --privileged --name android-emulator-docker -p 8000:80 -v ./app:/app -v ./root/sdk/android:/root/sdk/android android-emulator-docker tail -f /dev/null
