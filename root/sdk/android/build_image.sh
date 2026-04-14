@@ -112,13 +112,13 @@ configPrivApks() {
                         apk_name="${apk%%.*}"
                         remote_dir="$remote_apks_dir/$apk_name"
                         pushFile $remote_dir $apk $file
-                        echo "ls $remote_apks_dir: $($ANDROID_PATH_PLATFORM_TOOLS/adb shell ls "$remote_apks_dir" | grep "$apk_name")"
-                        echo "ls $remote_dir: $($ANDROID_PATH_PLATFORM_TOOLS/adb shell ls "$remote_dir")"
+                        # echo "ls $remote_apks_dir: $($ANDROID_PATH_PLATFORM_TOOLS/adb shell ls "$remote_apks_dir" | grep "$apk_name")"
+                        # echo "ls $remote_dir: $($ANDROID_PATH_PLATFORM_TOOLS/adb shell ls "$remote_dir")"
                     fi
                     if [ "${file##*.}" == "xml" ]; then
                         xml=$(basename $file)
                         pushFile $remote_permissions_dir $xml $file
-                        echo "ls $remote_permissions_dir: $($ANDROID_PATH_PLATFORM_TOOLS/adb shell ls "$remote_permissions_dir" | grep "$package")"
+                        # echo "ls $remote_permissions_dir: $($ANDROID_PATH_PLATFORM_TOOLS/adb shell ls "$remote_permissions_dir" | grep "$package")"
                     fi
                 fi
             done

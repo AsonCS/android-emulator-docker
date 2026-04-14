@@ -61,6 +61,9 @@ ENV ANDROID_PATH_PLATFORM_TOOLS="$ANDROID_HOME/platform-tools"
 
 ENV PATH="$PATH:$ANDROID_PATH_BUILD_TOOLS:$ANDROID_PATH_CMDLINE_TOOLS:$ANDROID_PATH_EMULATOR:$ANDROID_PATH_PLATFORM_TOOLS"
 
+# ENV APKS="'http://files.boxcontrol.io/s/MMZXzCP8zgwfWKb/download/DEV_WeUpdate_v.2.0.43.1_1115_release.apk'"
+# ENV PRIV_APKS="'http://files.boxcontrol.io/s/gga35cHKNazneLN/download/DEV_DC_2.0.80.4_1385_A9_debug_ADM-4135_5d24e5569d7e2f260274c40dc5ef6bf365e524ca.apk' 'http://files.boxcontrol.io/s/SLYxgKgd8KkgxHE/download/privapp-permissions-com.wetek.devicecontrol.xml' 'http://files.boxcontrol.io/s/LBGiTBFXZn64wD4/download/DEV_AP_FirmwareBuild_1.1.0_15_debug_test_f24b0944222aeead6b0ecc4f79d807642bd6eae0.apk' 'http://files.boxcontrol.io/s/GLxZAWRJyDwYeGL/download/DEV_SP_9b43e74b-1402-4fc2-b8e1-dd6b7f3e5d92_1.3_15_debug_test_375570a6ad0ea5fab7063e20edcb6cdb4199069a.apk' 'http://files.boxcontrol.io/s/MMZXzCP8zgwfWKb/download/DEV_WeUpdate_v.2.0.43.1_1115_release.apk' 'http://files.boxcontrol.io/s/2XmC84MArMoXdxm/download/privapp-permissions-com.wetek.weupdate.xml'"
+
 
 #============================================
 # Application code
