@@ -47,10 +47,14 @@ runEmulator() {
     $ANDROID_PATH_EMULATOR/emulator \
         -avd "$EMULATOR_NAME" \
         -port $EMULATOR_PORT \
+        -skip-adb-auth \
         -no-boot-anim \
         -writable-system \
-        -gpu swiftshader_indirect \
         -no-snapshot \
+        -no-snapshot-save \
+        -wipe-data \
+        -feature AllowSnapshotMigration \
+        -gpu swiftshader_indirect \
         $EMULATOR_ARGS &> $file \
         & echo "Emulator logs in $file" 
     waitForDevice

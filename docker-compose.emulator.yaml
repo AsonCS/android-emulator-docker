@@ -1,0 +1,16 @@
+services:
+  emulator:
+    build:
+      context: .
+      dockerfile: Dockerfile.emulator
+    container_name: android-emulator-docker-emulator
+    devices:
+      - /dev/kvm
+    environment:
+      - ADB_KEY=$ADB_KEY # export ADB_KEY=$(cat ~/.android/adbkey)
+    ports:
+      - "8000:80"
+      - "5554:5554"
+      - "5555:5555"
+    command: ./entrypoint.sh
+    # command: sleep infinity

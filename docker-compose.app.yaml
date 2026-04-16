@@ -1,0 +1,13 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    container_name: android-emulator-docker-app
+    volumes:
+      - ./app:/home/ubuntu/app
+    environment:
+      - ADB_KEY=$ADB_KEY # export ADB_KEY=$(cat ~/.android/adbkey)
+    ports:
+      - "8001:80"
+    command: sleep infinity

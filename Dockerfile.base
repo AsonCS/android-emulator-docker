@@ -1,0 +1,33 @@
+FROM ubuntu:24.04
+
+LABEL maintainer="Ason CS"
+LABEL org.opencontainers.image.description="Android Emulator Docker"
+
+WORKDIR /home/ubuntu/app
+
+COPY ./app/requirements.txt ./requirements.txt
+
+#============================================
+# Install Dependences
+#============================================
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip \
+    openjdk-21-jdk-headless \
+    libpulse0 \
+    libgles2 \
+    xvfb \
+    wget \
+    unzip \
+    curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean;
+
+
+#============================================
+# Python dependencies
+#============================================
+RUN pip3 install --no-cache-dir --break-system-packages -r ./requirements.txt
+
+CMD ["sleep", "infinity"]
+# docker build -t=android-emulator-docker-base -f=Dockerfile.base .
