@@ -300,6 +300,7 @@ def logcat_search_regex(
     - `flags` supports `i`, `m`, and `s`.
     - `level` maps to Android logcat priority (`*:E`, `*:W`, etc.).
     - Device selection/connection is delegated to the shared ADB runner.
+    
     Regex Examples:
     - `.*(okhttp.OkHttpClient: --> [^(end)]).*` Catch the entire single line of an OkHttp request, but not the response.
     - `okhttp.OkHttpClient: --> [^(end)]` Same as above.
