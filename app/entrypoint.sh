@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cd /home/ubuntu/app
+
 if [ -z "$API_PORT" ]; then
     echo "Required variables are missing."
     exit 1

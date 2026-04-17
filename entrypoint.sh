@@ -14,12 +14,7 @@ configureAdbKey
 chmod -R 777 /dev/kvm
 chmod -R 777 /root/.android
 chmod -R 777 /home/ubuntu/.android
-# nohup su ubuntu -c './build_image.sh "-no-audio -no-window"' > out.log 2>&1 &
-file="./build_image.log"
-touch $file
-nohup su ubuntu -c './build_image.sh "-no-audio -no-window"' &> $file \
-    & echo "Build images logs in $file"
-# su ubuntu -c './build_image.sh "-no-audio -no-window"'
+su ubuntu -c './build_image.sh "-no-audio -no-window"'
 
 cd ./app
 
