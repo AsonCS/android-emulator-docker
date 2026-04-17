@@ -126,6 +126,13 @@ async def push_to_emulator(
         description="Absolute destination path on the emulator. Must start with `/sdcard/` or `/data/local/tmp/`.",
         examples=["/sdcard/automation/payload.txt"],
     ),
+    device_id: Optional[str] = Query(
+        None,
+        description=(
+            "ADB device identifier (serial or host:port). "
+            "If omitted, the first online device is used."
+        ),
+    ),
 ):
     """
     Upload a file from the client, save it temporarily in the container, then push it
@@ -143,7 +150,7 @@ async def push_to_emulator(
         os.close(fd)
 
     try:
-        fs.push_to_emulator(tmp_path, dest)
+        fs.push_to_emulator(tmp_path, dest, device_id=device_id)
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
     finally:
@@ -177,6 +184,13 @@ def pull_from_emulator(
         description="Absolute path of the file on the emulator",
         examples=["/sdcard/Pictures/screenshot.png"],
     ),
+    device_id: Optional[str] = Query(
+        None,
+        description=(
+            "ADB device identifier (serial or host:port). "
+            "If omitted, the first online device is used."
+        ),
+    ),
     background_tasks: BackgroundTasks = BackgroundTasks(),
 ):
     """
@@ -186,7 +200,7 @@ def pull_from_emulator(
     the response has been transmitted.
     """
     try:
-        local_path = fs.pull_from_emulator(path)
+        local_path = fs.pull_from_emulator(path, device_id=device_id)
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
 

@@ -11,7 +11,7 @@ import signal
 import subprocess
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, ConfigDict
 
@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 _DEVICE_RECORDING_PATH = "/sdcard/recording.mp4"
 _recording_proc: Optional[subprocess.Popen] = None
 _recording_local_path: Optional[str] = None
+_recording_device_id: Optional[str] = None
 
 
 # ── Response models ────────────────────────────────────────────────────────────
@@ -74,14 +75,26 @@ class ErrorResponse(BaseModel):
         },
     },
 )
-def screenshot():
+def screenshot(
+    device_id: Optional[str] = Query(
+        None,
+        description=(
+            "ADB device identifier (serial or host:port). "
+            "If omitted, the first online device is used."
+        ),
+    ),
+):
     """
     Capture and return a real-time screenshot of the emulator screen as a PNG image.
 
     Uses `adb exec-out screencap -p` which returns raw PNG bytes without a shell wrapper.
     """
     try:
-        png_bytes = adb.run_binary(["exec-out", "screencap", "-p"], timeout=15)
+        png_bytes = adb.run_binary(
+            ["exec-out", "screencap", "-p"],
+            timeout=15,
+            device_id=device_id,
+        )
     except adb.ADBError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
 
@@ -120,7 +133,15 @@ def screenshot():
         },
     },
 )
-def record_start():
+def record_start(
+    device_id: Optional[str] = Query(
+        None,
+        description=(
+            "ADB device identifier (serial or host:port). "
+            "If omitted, the first online device is used."
+        ),
+    ),
+):
     """
     Start an on-device screen recording via `adb shell screenrecord`.
 
@@ -128,7 +149,7 @@ def record_start():
     Call `POST /screen/record/stop` to stop and retrieve the file.
     Only one recording session can be active at a time.
     """
-    global _recording_proc, _recording_local_path
+    global _recording_proc, _recording_local_path, _recording_device_id
 
     if _recording_proc is not None and _recording_proc.poll() is None:
         raise HTTPException(
@@ -136,15 +157,17 @@ def record_start():
         )
 
     try:
-        adb.run(["shell", "rm", "-f", _DEVICE_RECORDING_PATH])
+        adb.run(["shell", "rm", "-f", _DEVICE_RECORDING_PATH], device_id=device_id)
     except adb.ADBError:
         pass
 
     _recording_local_path = os.path.join(
         config.TEMP_DIR, "recordings", "screen_recording.mp4"
     )
+    _recording_device_id = device_id
     _recording_proc = adb.start_process(
-        ["shell", "screenrecord", _DEVICE_RECORDING_PATH]
+        ["shell", "screenrecord", _DEVICE_RECORDING_PATH],
+        device_id=device_id,
     )
     return {"message": "Recording started", "device_path": _DEVICE_RECORDING_PATH}
 
@@ -177,14 +200,22 @@ def record_start():
         },
     },
 )
-def record_stop():
+def record_stop(
+    device_id: Optional[str] = Query(
+        None,
+        description=(
+            "ADB device identifier (serial or host:port). "
+            "If omitted, uses the same target from record start when available."
+        ),
+    ),
+):
     """
     Stop the active screen recording, pull the MP4 from the emulator, and stream it to the client.
 
     Sends `SIGINT` to the `screenrecord` process so it can finalise and write the MP4 header
     before exiting. The file is then pulled via `adb pull` and returned as `video/mp4`.
     """
-    global _recording_proc, _recording_local_path
+    global _recording_proc, _recording_local_path, _recording_device_id
 
     if _recording_proc is None or _recording_proc.poll() is not None:
         raise HTTPException(status_code=409, detail="No recording is in progress")
@@ -199,12 +230,19 @@ def record_stop():
     finally:
         _recording_proc = None
 
+    target_device = _recording_device_id or device_id
+    _recording_device_id = None
+
     local_path = _recording_local_path or os.path.join(
         config.TEMP_DIR, "recordings", "screen_recording.mp4"
     )
 
     try:
-        _, stderr = adb.run(["pull", _DEVICE_RECORDING_PATH, local_path], timeout=60)
+        _, stderr = adb.run(
+            ["pull", _DEVICE_RECORDING_PATH, local_path],
+            timeout=60,
+            device_id=target_device,
+        )
     except adb.ADBError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
 

@@ -53,6 +53,10 @@ This project provides a REST API interface written in Python to control, monitor
     * *Description:* Retrieves logcat outputs filtered by a specific query parameter.
     * *Parameters:* `grep` (string to filter), `level` (e.g., Error, Warning, Info).
     * *Returns:* Plain text response (`text/plain`) containing filtered logcat lines.
+* **Regex Filtered Logs (`GET /logs/logcat/search/regex`):**
+    * *Description:* Retrieves logcat output filtered by a Python regular expression.
+    * *Parameters:* `pattern` (required regex), `flags` (`i`, `m`, `s`), `level`, `lines`, `device_id`.
+    * *Returns:* Plain text response (`text/plain`) containing regex-matched logcat lines.
 
 ### 5.5. File System Management
 * **Push to Emulator (`POST /files/emulator/push`):**

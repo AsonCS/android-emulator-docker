@@ -8,6 +8,7 @@ import asyncio
 import base64
 import logging
 from typing import Optional
+from urllib.parse import parse_qs
 
 from socketio import AsyncServer
 
@@ -20,8 +21,8 @@ logger = logging.getLogger(__name__)
 _screencast_task: Optional[asyncio.Task] = None
 _screenshot_interval: float = 1.0  # Default 1 second between screenshots
 _connected_clients: set = set()
-_logcat_task: Optional[asyncio.Task] = None
-_logcat_lock = asyncio.Lock()
+_client_device_ids: dict[str, Optional[str]] = {}
+_client_logcat_tasks: dict[str, asyncio.Task] = {}
 _client_logcat_state: dict[str, dict[str, object]] = {}
 
 _LOGCAT_FLUSH_INTERVAL_S = 0.2
@@ -39,7 +40,7 @@ def get_sio() -> AsyncServer:
     )
 
 
-async def screenshot_to_base64() -> Optional[str]:
+async def screenshot_to_base64(device_id: Optional[str] = None) -> Optional[str]:
     """
     Capture a screenshot and convert it to base64 string.
     
@@ -47,7 +48,11 @@ async def screenshot_to_base64() -> Optional[str]:
         Base64-encoded PNG string, or None if capture fails.
     """
     try:
-        png_bytes = adb.run_binary(["exec-out", "screencap", "-p"], timeout=15)
+        png_bytes = adb.run_binary(
+            ["exec-out", "screencap", "-p"],
+            timeout=15,
+            device_id=device_id,
+        )
         if not png_bytes:
             logger.warning("Screenshot returned empty data")
             return None
@@ -68,13 +73,10 @@ async def _screenshot_loop(sio: AsyncServer):
     logger.info("Screenshot broadcast loop started")
     try:
         while _connected_clients:
-            screenshot_b64 = await screenshot_to_base64()
-            if screenshot_b64:
-                await sio.emit(
-                    "screenshot",
-                    {"image": screenshot_b64},
-                    to=None,  # Broadcast to all clients
-                )
+            for sid in list(_connected_clients):
+                screenshot_b64 = await screenshot_to_base64(_client_device_ids.get(sid))
+                if screenshot_b64:
+                    await sio.emit("screenshot", {"image": screenshot_b64}, to=sid)
             await asyncio.sleep(_screenshot_interval)
     except asyncio.CancelledError:
         logger.info("Screenshot broadcast loop cancelled")
@@ -84,55 +86,38 @@ async def _screenshot_loop(sio: AsyncServer):
         logger.info("Screenshot broadcast loop stopped")
 
 
-def _has_logcat_subscribers() -> bool:
-    """Return True if at least one connected client has logcat enabled."""
-    for sid, state in _client_logcat_state.items():
-        if sid in _connected_clients and bool(state.get("enabled", False)):
-            return True
-    return False
-
-
-async def _flush_logcat_buffers(
-    sio: AsyncServer,
-    buffers: dict[str, list[str]],
-):
-    """Flush buffered log lines to each subscribed client."""
-    for sid, lines in list(buffers.items()):
-        if not lines:
-            continue
-        if sid not in _connected_clients:
-            continue
-        await sio.emit("logcat_lines", {"lines": lines}, to=sid)
-    buffers.clear()
-
-
-async def _logcat_loop(sio: AsyncServer):
-    """Stream logcat lines and fan out to clients with server-side filtering."""
-    logger.info("Logcat stream loop started")
-    buffers: dict[str, list[str]] = {}
+async def _logcat_loop(sio: AsyncServer, sid: str):
+    """Stream logcat lines for one client using its selected adb target."""
+    logger.info("Logcat stream loop started for %s", sid)
+    state = _client_logcat_state.setdefault(
+        sid,
+        {"enabled": False, "filter": "", "filter_lower": ""},
+    )
+    device_id = _client_device_ids.get(sid)
+    buffers: list[str] = []
+    logcat_command = [config.ADB_PATH]
+    if device_id:
+        logcat_command.extend(["-s", device_id])
+    else:
+        logcat_command.extend(["-s", config.EMULATOR_SERIAL])
+    logcat_command.extend(["logcat", "-v", "time", "-T", "1"])
 
     try:
         process = await asyncio.create_subprocess_exec(
-            config.ADB_PATH,
-            "-s",
-            config.EMULATOR_SERIAL,
-            "logcat",
-            "-v",
-            "time",
-            "-T",
-            "1",
+            *logcat_command,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.DEVNULL,
         )
     except Exception as exc:
-        logger.error("Unable to start logcat stream: %s", exc)
+        logger.error("Unable to start logcat stream for %s: %s", sid, exc)
+        await sio.emit("error", {"message": f"Unable to start logcat stream: {exc}"}, to=sid)
         return
 
     loop = asyncio.get_running_loop()
     last_flush = loop.time()
 
     try:
-        while _has_logcat_subscribers():
+        while sid in _connected_clients and bool(state.get("enabled", False)):
             try:
                 raw_line = await asyncio.wait_for(
                     process.stdout.readline(),
@@ -145,31 +130,31 @@ async def _logcat_loop(sio: AsyncServer):
                 line = raw_line.decode("utf-8", errors="replace").rstrip("\r\n")
                 if line:
                     lower_line = line.lower()
-                    for sid, state in list(_client_logcat_state.items()):
-                        if sid not in _connected_clients or not bool(state.get("enabled", False)):
-                            continue
-                        filter_text = str(state.get("filter_lower", ""))
-                        if filter_text and filter_text not in lower_line:
-                            continue
-                        buffers.setdefault(sid, []).append(line)
+                    filter_text = str(state.get("filter_lower", ""))
+                    if not filter_text or filter_text in lower_line:
+                        buffers.append(line)
 
             now = loop.time()
             if now - last_flush >= _LOGCAT_FLUSH_INTERVAL_S:
-                await _flush_logcat_buffers(sio, buffers)
+                if buffers and sid in _connected_clients:
+                    await sio.emit("logcat_lines", {"lines": buffers}, to=sid)
+                buffers.clear()
                 last_flush = now
-            elif any(len(lines) >= _LOGCAT_BATCH_SIZE for lines in buffers.values()):
-                await _flush_logcat_buffers(sio, buffers)
+            elif len(buffers) >= _LOGCAT_BATCH_SIZE:
+                await sio.emit("logcat_lines", {"lines": buffers}, to=sid)
+                buffers.clear()
                 last_flush = now
 
             if process.returncode is not None and not raw_line:
                 logger.warning("logcat process exited with code %s", process.returncode)
                 break
     except asyncio.CancelledError:
-        logger.info("Logcat stream loop cancelled")
+        logger.info("Logcat stream loop cancelled for %s", sid)
     except Exception as exc:
-        logger.error("Error in logcat stream loop: %s", exc)
+        logger.error("Error in logcat stream loop for %s: %s", sid, exc)
     finally:
-        await _flush_logcat_buffers(sio, buffers)
+        if buffers and sid in _connected_clients:
+            await sio.emit("logcat_lines", {"lines": buffers}, to=sid)
         if process.returncode is None:
             process.terminate()
             try:
@@ -177,29 +162,44 @@ async def _logcat_loop(sio: AsyncServer):
             except asyncio.TimeoutError:
                 process.kill()
                 await process.wait()
-        logger.info("Logcat stream loop stopped")
+        _client_logcat_tasks.pop(sid, None)
+        logger.info("Logcat stream loop stopped for %s", sid)
 
 
-async def _ensure_logcat_task(sio: AsyncServer):
-    """Start or stop the shared logcat loop based on active subscribers."""
-    global _logcat_task
-    async with _logcat_lock:
-        should_run = _has_logcat_subscribers()
+async def _ensure_logcat_task(sio: AsyncServer, sid: str):
+    """Start or stop one logcat loop for the given client."""
+    should_run = sid in _connected_clients and bool(
+        _client_logcat_state.get(sid, {}).get("enabled", False)
+    )
+    current_task = _client_logcat_tasks.get(sid)
 
-        if should_run:
-            if _logcat_task is None or _logcat_task.done():
-                _logcat_task = asyncio.create_task(_logcat_loop(sio))
-                logger.info("Started logcat stream loop")
-            return
+    if should_run:
+        if current_task is None or current_task.done():
+            _client_logcat_tasks[sid] = asyncio.create_task(_logcat_loop(sio, sid))
+            logger.info("Started logcat stream loop for %s", sid)
+        return
 
-        if _logcat_task and not _logcat_task.done():
-            _logcat_task.cancel()
-            try:
-                await _logcat_task
-            except asyncio.CancelledError:
-                pass
-            logger.info("Stopped logcat stream loop (no subscribers)")
-        _logcat_task = None
+    if current_task and not current_task.done():
+        current_task.cancel()
+        try:
+            await current_task
+        except asyncio.CancelledError:
+            pass
+        logger.info("Stopped logcat stream loop for %s", sid)
+    _client_logcat_tasks.pop(sid, None)
+
+
+def _extract_device_id(environ, auth) -> Optional[str]:
+    """Read device_id from Socket.IO auth first, then query string fallback."""
+    if isinstance(auth, dict):
+        auth_device_id = auth.get("device_id")
+        if isinstance(auth_device_id, str) and auth_device_id.strip():
+            return auth_device_id.strip()
+
+    query_string = environ.get("QUERY_STRING", "") if isinstance(environ, dict) else ""
+    parsed = parse_qs(query_string)
+    query_device_id = parsed.get("device_id", [""])[0].strip()
+    return query_device_id or None
 
 
 def register_screencast_handlers(sio: AsyncServer):
@@ -211,10 +211,11 @@ def register_screencast_handlers(sio: AsyncServer):
     """
 
     @sio.on("connect")
-    async def on_connect(sid: str, environ):
+    async def on_connect(sid: str, environ, auth=None):
         """Handle client connection."""
         logger.info(f"Client connected: {sid}")
         _connected_clients.add(sid)
+        _client_device_ids[sid] = _extract_device_id(environ, auth)
         _client_logcat_state[sid] = {
             "enabled": False,
             "filter": "",
@@ -232,6 +233,7 @@ def register_screencast_handlers(sio: AsyncServer):
         """Handle client disconnection."""
         logger.info(f"Client disconnected: {sid}")
         _connected_clients.discard(sid)
+        _client_device_ids.pop(sid, None)
         _client_logcat_state.pop(sid, None)
 
         # Stop screenshot broadcast loop if no clients connected
@@ -245,7 +247,7 @@ def register_screencast_handlers(sio: AsyncServer):
             _screencast_task = None
             logger.info("Stopped screenshot broadcast loop (no connected clients)")
 
-        await _ensure_logcat_task(sio)
+        await _ensure_logcat_task(sio, sid)
 
     @sio.on("set_interval")
     async def on_set_interval(sid: str, data: dict):
@@ -281,9 +283,10 @@ def register_screencast_handlers(sio: AsyncServer):
             "screenshot_interval": _screenshot_interval,
             "broadcast_active": _screencast_task is not None
             and not _screencast_task.done(),
-            "logcat_active": _logcat_task is not None and not _logcat_task.done(),
+            "logcat_active": sid in _client_logcat_tasks and not _client_logcat_tasks[sid].done(),
             "logcat_enabled": bool(_client_logcat_state.get(sid, {}).get("enabled", False)),
             "logcat_filter": str(_client_logcat_state.get(sid, {}).get("filter", "")),
+            "device_id": _client_device_ids.get(sid),
         }
         await sio.emit("status", status, to=sid)
 
@@ -303,14 +306,14 @@ def register_screencast_handlers(sio: AsyncServer):
         state["filter"] = filter_text
         state["filter_lower"] = filter_text.lower()
 
-        await _ensure_logcat_task(sio)
+        await _ensure_logcat_task(sio, sid)
 
         await sio.emit(
             "logcat_status",
             {
                 "enabled": enabled,
                 "filter": filter_text,
-                "active": _logcat_task is not None and not _logcat_task.done(),
+                "active": sid in _client_logcat_tasks and not _client_logcat_tasks[sid].done(),
             },
             to=sid,
         )

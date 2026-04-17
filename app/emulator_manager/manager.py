@@ -4,6 +4,7 @@ Emulator lifecycle management: status polling, reboot, and wipe-data restart.
 import logging
 import subprocess
 from enum import Enum
+from typing import Optional
 
 import config
 import adb_runner.runner as adb
@@ -21,48 +22,32 @@ class EmulatorStatus(str, Enum):
 # ── Status ────────────────────────────────────────────────────────────────────
 
 
-def get_status() -> EmulatorStatus:
+def get_status(device_id: Optional[str] = None) -> EmulatorStatus:
     """Determine the current emulator status via ADB."""
+    # run() resolves/auto-connects the target device and executes against it.
     try:
-        result = subprocess.run(
-            [config.ADB_PATH, "devices"],
-            capture_output=True,
-            text=True,
+        stdout, _ = adb.run(
+            ["shell", "getprop", "sys.boot_completed"],
             timeout=10,
+            device_id=device_id,
         )
-    except (FileNotFoundError, subprocess.TimeoutExpired):
-        return EmulatorStatus.OFFLINE
-
-    device_lines = result.stdout.splitlines()[1:]
-    connected = {
-        line.split()[0]
-        for line in device_lines
-        if len(line.split()) >= 2 and line.split()[1] != "offline"
-    }
-
-    if config.EMULATOR_SERIAL not in connected:
-        return EmulatorStatus.OFFLINE
-
-    # Device is visible – check boot completion.
-    try:
-        stdout, _ = adb.run(["shell", "getprop", "sys.boot_completed"], timeout=10)
         if stdout.strip() == "1":
             return EmulatorStatus.READY
         return EmulatorStatus.BOOTING
     except adb.ADBError:
-        return EmulatorStatus.BOOTING
+        return EmulatorStatus.OFFLINE
 
 
 # ── Lifecycle ─────────────────────────────────────────────────────────────────
 
 
-def reboot() -> None:
+def reboot(device_id: Optional[str] = None) -> None:
     """Reboot the Android OS inside the emulator (non-destructive)."""
-    stdout, stderr = adb.run(["reboot"], timeout=15)
+    stdout, stderr = adb.run(["reboot"], timeout=15, device_id=device_id)
     logger.info("Emulator reboot triggered. stdout=%r stderr=%r", stdout, stderr)
 
 
-def wipe() -> None:
+def wipe(device_id: Optional[str] = None) -> None:
     """
     Wipe the emulator's data partition and restart it.
 
@@ -73,7 +58,7 @@ def wipe() -> None:
     """
     # 1. Ask the emulator to exit gracefully.
     try:
-        adb.run(["emu", "kill"], timeout=15)
+        adb.run(["emu", "kill"], timeout=15, device_id=device_id)
         logger.info("Emulator stopped via 'emu kill'.")
     except adb.ADBError as exc:
         logger.warning("Could not stop emulator via ADB: %s", exc)

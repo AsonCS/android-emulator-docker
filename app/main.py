@@ -1,7 +1,7 @@
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from socketio import ASGIApp
@@ -98,7 +98,15 @@ application.include_router(env.router, prefix="/env", tags=["Environment"])
         }
     },
 )
-async def screencast_page():
+async def screencast_page(
+    device_id: str | None = Query(
+        None,
+        description=(
+            "ADB device identifier (serial or host:port) for live screencast, "
+            "input gestures, and logcat streaming. If omitted, the default target is used."
+        ),
+    ),
+):
     """
     Serve the live screencast viewer page.
     

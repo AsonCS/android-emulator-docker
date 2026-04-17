@@ -148,7 +148,7 @@ All files are clean. Here's the complete project structure created:
     ├── emulator.py          GET /emulator/status, POST /emulator/reboot, POST /emulator/wipe
     ├── adb.py               POST /adb/execute
     ├── screen.py            GET /screen/image, POST /screen/record/start|stop
-    ├── logs.py              GET /logs/logcat, GET /logs/logcat/search
+    ├── logs.py              GET /logs/logcat, GET /logs/logcat/search, GET /logs/logcat/search/regex
     ├── files.py             POST /files/emulator/push, GET /files/emulator/pull, GET|POST /files/container
     ├── app.py               POST /app/install|uninstall|clear
     ├── input.py             POST /input/tap|swipe|text|key

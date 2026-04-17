@@ -7,6 +7,7 @@ traversal attacks.
 import logging
 import os
 import tempfile
+from typing import Optional
 
 import config
 import adb_runner.runner as adb
@@ -34,14 +35,14 @@ def _safe_container_path(rel_path: str) -> str:
 # ── Emulator I/O ──────────────────────────────────────────────────────────────
 
 
-def push_to_emulator(src: str, dest: str) -> None:
+def push_to_emulator(src: str, dest: str, device_id: Optional[str] = None) -> None:
     """Push a local *src* file to *dest* on the emulator via ADB."""
-    stdout, stderr = adb.run(["push", src, dest])
+    stdout, stderr = adb.run(["push", src, dest], device_id=device_id)
     if "error" in stderr.lower():
         raise RuntimeError(f"ADB push failed: {stderr.strip()}")
 
 
-def pull_from_emulator(device_path: str) -> str:
+def pull_from_emulator(device_path: str, device_id: Optional[str] = None) -> str:
     """
     Pull *device_path* from the emulator to a temporary local file.
     Returns the absolute path of the downloaded file (caller owns cleanup).
@@ -51,7 +52,7 @@ def pull_from_emulator(device_path: str) -> str:
         suffix=f"_{filename}", dir=config.TEMP_DIR
     )
     os.close(fd)
-    stdout, stderr = adb.run(["pull", device_path, local_path], timeout=60)
+    stdout, stderr = adb.run(["pull", device_path, local_path], timeout=60, device_id=device_id)
     if "error" in stderr.lower() or not os.path.exists(local_path):
         raise RuntimeError(f"ADB pull failed: {stderr.strip()}")
     return local_path

@@ -7,8 +7,9 @@ POST /input/text  – type text into the focused field
 POST /input/key   – send a hardware key event
 """
 import re
+from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
 
 import adb_runner.runner as adb
@@ -97,7 +98,16 @@ class ErrorResponse(BaseModel):
         503: {"model": ErrorResponse, "description": "ADB unreachable"},
     },
 )
-def tap(req: TapRequest):
+def tap(
+    req: TapRequest,
+    device_id: Optional[str] = Query(
+        None,
+        description=(
+            "ADB device identifier (serial or host:port). "
+            "If omitted, the first online device is used."
+        ),
+    ),
+):
     """
     Simulate a single touch tap at `(x, y)` on the emulator screen.
 
@@ -105,7 +115,7 @@ def tap(req: TapRequest):
     Coordinates are in device pixels; the resolution depends on the AVD screen size.
     """
     try:
-        adb.run(["shell", "input", "tap", str(req.x), str(req.y)])
+        adb.run(["shell", "input", "tap", str(req.x), str(req.y)], device_id=device_id)
     except adb.ADBError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
     return {"message": f"Tapped at ({req.x}, {req.y})"}
@@ -131,7 +141,16 @@ def tap(req: TapRequest):
         503: {"model": ErrorResponse, "description": "ADB unreachable"},
     },
 )
-def swipe(req: SwipeRequest):
+def swipe(
+    req: SwipeRequest,
+    device_id: Optional[str] = Query(
+        None,
+        description=(
+            "ADB device identifier (serial or host:port). "
+            "If omitted, the first online device is used."
+        ),
+    ),
+):
     """
     Simulate a swipe gesture from `(x1, y1)` to `(x2, y2)` over `duration_ms` milliseconds.
 
@@ -145,7 +164,8 @@ def swipe(req: SwipeRequest):
                 str(req.x1), str(req.y1),
                 str(req.x2), str(req.y2),
                 str(req.duration_ms),
-            ]
+            ],
+            device_id=device_id,
         )
     except adb.ADBError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
@@ -180,7 +200,16 @@ def swipe(req: SwipeRequest):
         503: {"model": ErrorResponse, "description": "ADB unreachable"},
     },
 )
-def text_input(req: TextRequest):
+def text_input(
+    req: TextRequest,
+    device_id: Optional[str] = Query(
+        None,
+        description=(
+            "ADB device identifier (serial or host:port). "
+            "If omitted, the first online device is used."
+        ),
+    ),
+):
     """
     Type a string into the currently focused text field on the emulator.
 
@@ -191,7 +220,7 @@ def text_input(req: TextRequest):
         raise HTTPException(status_code=400, detail="Text must not be empty")
     encoded = req.text.replace(" ", "%s")
     try:
-        adb.run(["shell", "input", "text", encoded])
+        adb.run(["shell", "input", "text", encoded], device_id=device_id)
     except adb.ADBError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
     return {"message": "Text entered"}
@@ -239,7 +268,16 @@ def text_input(req: TextRequest):
         503: {"model": ErrorResponse, "description": "ADB unreachable"},
     },
 )
-def key_event(req: KeyRequest):
+def key_event(
+    req: KeyRequest,
+    device_id: Optional[str] = Query(
+        None,
+        description=(
+            "ADB device identifier (serial or host:port). "
+            "If omitted, the first online device is used."
+        ),
+    ),
+):
     """
     Simulate a hardware key press on the emulator.
 
@@ -257,7 +295,7 @@ def key_event(req: KeyRequest):
             ),
         )
     try:
-        adb.run(["shell", "input", "keyevent", keycode])
+        adb.run(["shell", "input", "keyevent", keycode], device_id=device_id)
     except adb.ADBError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
     return {"message": f"Key event sent: {keycode}"}

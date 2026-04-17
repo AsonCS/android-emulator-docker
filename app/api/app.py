@@ -142,6 +142,13 @@ async def install_apk(
     grant_permissions: bool = Query(
         False, description="Automatically grant all runtime permissions (`-g` flag)"
     ),
+    device_id: str | None = Query(
+        None,
+        description=(
+            "ADB device identifier (serial or host:port). "
+            "If omitted, the first online device is used."
+        ),
+    ),
 ):
     """
     Upload an APK and install it on the emulator via `adb install`.
@@ -168,7 +175,7 @@ async def install_apk(
     install_args.append(tmp_path)
 
     try:
-        stdout, stderr = adb.run(install_args, timeout=120)
+        stdout, stderr = adb.run(install_args, timeout=120, device_id=device_id)
     except adb.ADBError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
     finally:
@@ -212,14 +219,23 @@ async def install_apk(
         503: {"model": ErrorResponse, "description": "ADB unreachable"},
     },
 )
-def uninstall_apk(req: UninstallRequest):
+def uninstall_apk(
+    req: UninstallRequest,
+    device_id: str | None = Query(
+        None,
+        description=(
+            "ADB device identifier (serial or host:port). "
+            "If omitted, the first online device is used."
+        ),
+    ),
+):
     """
     Uninstall an application from the emulator by its package name.
 
     Equivalent to `adb uninstall <package>`.
     """
     try:
-        stdout, stderr = adb.run(["uninstall", req.package], timeout=60)
+        stdout, stderr = adb.run(["uninstall", req.package], timeout=60, device_id=device_id)
     except adb.ADBError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
 
@@ -261,7 +277,16 @@ def uninstall_apk(req: UninstallRequest):
         503: {"model": ErrorResponse, "description": "ADB unreachable"},
     },
 )
-def clear_app_data(req: ClearDataRequest):
+def clear_app_data(
+    req: ClearDataRequest,
+    device_id: str | None = Query(
+        None,
+        description=(
+            "ADB device identifier (serial or host:port). "
+            "If omitted, the first online device is used."
+        ),
+    ),
+):
     """
     Wipe the user data and cache for a specific package via `adb shell pm clear <package>`.
 
@@ -269,7 +294,9 @@ def clear_app_data(req: ClearDataRequest):
     """
     try:
         stdout, stderr = adb.run(
-            ["shell", "pm", "clear", req.package], timeout=30
+            ["shell", "pm", "clear", req.package],
+            timeout=30,
+            device_id=device_id,
         )
     except adb.ADBError as exc:
         raise HTTPException(status_code=503, detail=str(exc))

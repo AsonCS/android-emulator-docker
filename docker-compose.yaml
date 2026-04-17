@@ -9,6 +9,7 @@ services:
       - ./.devcontainer:/home/ubuntu/.devcontainer
       - ./.dockerignore:/home/ubuntu/.dockerignore
       - ./.env:/home/ubuntu/.env
+      - ./android-sdk/platform-tools:/home/ubuntu/android-sdk/platform-tools
       - ./app:/home/ubuntu/app
       - ./docker-compose.yaml:/home/ubuntu/docker-compose.yaml
       - ./Dockerfile.app:/home/ubuntu/Dockerfile.app
@@ -18,7 +19,8 @@ services:
     ports:
       - "8001:80"
     extra_hosts:
-      - host.docker.internal:172.17.0.1
+      # - host.docker.internal:172.17.0.1
+      - host.docker.internal:host-gateway
     command: sleep infinity
   
   # emulator:

@@ -6,7 +6,7 @@ POST /env/network  – toggle airplane mode, Wi-Fi, or mobile data
 """
 from typing import Literal
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
 
 import adb_runner.runner as adb
@@ -93,7 +93,16 @@ class ErrorResponse(BaseModel):
         503: {"model": ErrorResponse, "description": "ADB unreachable"},
     },
 )
-def set_location(req: LocationRequest):
+def set_location(
+    req: LocationRequest,
+    device_id: str | None = Query(
+        None,
+        description=(
+            "ADB device identifier (serial or host:port). "
+            "If omitted, the first online device is used."
+        ),
+    ),
+):
     """
     Set the GPS coordinates of the emulator using `adb emu geo fix`.
 
@@ -104,6 +113,7 @@ def set_location(req: LocationRequest):
         adb.run(
             ["emu", "geo", "fix", str(req.longitude), str(req.latitude)],
             timeout=15,
+            device_id=device_id,
         )
     except adb.ADBError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
@@ -141,7 +151,16 @@ def set_location(req: LocationRequest):
         503: {"model": ErrorResponse, "description": "ADB unreachable"},
     },
 )
-def set_network(req: NetworkRequest):
+def set_network(
+    req: NetworkRequest,
+    device_id: str | None = Query(
+        None,
+        description=(
+            "ADB device identifier (serial or host:port). "
+            "If omitted, the first online device is used."
+        ),
+    ),
+):
     """
     Toggle airplane mode, Wi-Fi, or mobile data on the emulator.
 
@@ -156,6 +175,7 @@ def set_network(req: NetworkRequest):
             adb.run(
                 ["shell", "settings", "put", "global", "airplane_mode_on", value],
                 timeout=10,
+                device_id=device_id,
             )
             adb.run(
                 [
@@ -164,15 +184,16 @@ def set_network(req: NetworkRequest):
                     "--ez", "state", str(req.enabled).lower(),
                 ],
                 timeout=10,
+                device_id=device_id,
             )
 
         elif req.type == "wifi":
             state = "enable" if req.enabled else "disable"
-            adb.run(["shell", "svc", "wifi", state], timeout=10)
+            adb.run(["shell", "svc", "wifi", state], timeout=10, device_id=device_id)
 
         elif req.type == "data":
             state = "enable" if req.enabled else "disable"
-            adb.run(["shell", "svc", "data", state], timeout=10)
+            adb.run(["shell", "svc", "data", state], timeout=10, device_id=device_id)
 
     except adb.ADBError as exc:
         raise HTTPException(status_code=503, detail=str(exc))

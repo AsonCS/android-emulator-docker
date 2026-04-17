@@ -5,7 +5,9 @@ GET  /emulator/status  – current emulator state
 POST /emulator/reboot  – restart Android OS
 POST /emulator/wipe    – wipe data and restart emulator
 """
-from fastapi import APIRouter, HTTPException
+from typing import Optional
+
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, ConfigDict
 
 import emulator_manager.manager as manager
@@ -64,7 +66,15 @@ class ErrorResponse(BaseModel):
         }
     },
 )
-def get_status():
+def get_status(
+    device_id: Optional[str] = Query(
+        None,
+        description=(
+            "ADB device identifier (serial or host:port). "
+            "If omitted, the first online device is used."
+        ),
+    ),
+):
     """
     Retrieve the current state of the Android emulator.
 
@@ -74,7 +84,7 @@ def get_status():
     - **Online** – device is visible to ADB (alias kept for backwards compatibility)
     - **Ready** – emulator is fully booted and responsive
     """
-    status = manager.get_status()
+    status = manager.get_status(device_id=device_id)
     return {"status": status.value}
 
 
@@ -101,16 +111,24 @@ def get_status():
         },
     },
 )
-def reboot():
+def reboot(
+    device_id: Optional[str] = Query(
+        None,
+        description=(
+            "ADB device identifier (serial or host:port). "
+            "If omitted, the first online device is used."
+        ),
+    ),
+):
     """
     Perform a soft reboot of the Android OS inside the running emulator.
 
     The emulator process itself is not restarted; only the Android OS reboots.
     The device will transition through **Booting** before returning to **Ready**.
     """
-    if manager.get_status() == EmulatorStatus.OFFLINE:
+    if manager.get_status(device_id=device_id) == EmulatorStatus.OFFLINE:
         raise HTTPException(status_code=503, detail="Emulator is offline")
-    manager.reboot()
+    manager.reboot(device_id=device_id)
     return {"message": "Emulator reboot initiated"}
 
 
@@ -130,7 +148,15 @@ def reboot():
         }
     },
 )
-def wipe():
+def wipe(
+    device_id: Optional[str] = Query(
+        None,
+        description=(
+            "ADB device identifier (serial or host:port). "
+            "If omitted, the first online device is used."
+        ),
+    ),
+):
     """
     Wipe the emulator's data partition and restart it with a clean state.
 
@@ -139,5 +165,5 @@ def wipe():
     the emulator restarts in the background. Poll `/emulator/status` to wait for
     the **Ready** state.
     """
-    manager.wipe()
+    manager.wipe(device_id=device_id)
     return {"message": "Emulator wipe initiated. The emulator is restarting with clean data."}

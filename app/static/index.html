@@ -383,7 +383,11 @@
     </div>
 
     <script>
-        const socket = io();
+        const pageParams = new URLSearchParams(window.location.search);
+        const selectedDeviceId = (pageParams.get("device_id") || "").trim();
+        const socket = io({
+            auth: selectedDeviceId ? { device_id: selectedDeviceId } : {},
+        });
         let frameCount = 0;
         let isConnected = false;
         let pointerStart = null;
@@ -395,6 +399,14 @@
 
         const SWIPE_DISTANCE_THRESHOLD = 12;
         const MIN_SWIPE_DURATION_MS = 80;
+
+        function buildApiUrl(path) {
+            const url = new URL(path, window.location.origin);
+            if (selectedDeviceId) {
+                url.searchParams.set("device_id", selectedDeviceId);
+            }
+            return `${url.pathname}${url.search}`;
+        }
 
         // Connection handlers
         socket.on("connect", () => {
@@ -440,6 +452,10 @@
             }
             if (typeof data.logcat_filter === "string") {
                 filterInput.value = data.logcat_filter;
+            }
+            if (typeof data.device_id === "string" && data.device_id) {
+                showError(`Active: ${data.broadcast_active ? "Yes" : "No"} | Device: ${data.device_id}`);
+                return;
             }
             showError(`Active: ${data.broadcast_active ? "Yes" : "No"}`);
         });
@@ -622,7 +638,7 @@
         }
 
         async function sendTap(x, y) {
-            const response = await fetch("/input/tap", {
+            const response = await fetch(buildApiUrl("/input/tap"), {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ x, y }),
@@ -635,7 +651,7 @@
         }
 
         async function sendSwipe(x1, y1, x2, y2, durationMs) {
-            const response = await fetch("/input/swipe", {
+            const response = await fetch(buildApiUrl("/input/swipe"), {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

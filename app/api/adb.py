@@ -3,7 +3,9 @@ Raw ADB command execution route.
 
 POST /adb/execute – runs a sanitised ADB command against the emulator
 """
-from fastapi import APIRouter, HTTPException
+from typing import Optional
+
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
 
 import adb_runner.runner as adb
@@ -110,7 +112,16 @@ class ErrorResponse(BaseModel):
         },
     },
 )
-def execute(req: ADBExecuteRequest):
+def execute(
+    req: ADBExecuteRequest,
+    device_id: Optional[str] = Query(
+        None,
+        description=(
+            "ADB device identifier (serial or host:port). "
+            "If omitted, the first online device is used."
+        ),
+    ),
+):
     """
     Execute a raw ADB command against the connected emulator and return its output.
 
@@ -122,7 +133,7 @@ def execute(req: ADBExecuteRequest):
     (`shell=False`), preventing container-level injection.
     """
     try:
-        stdout, stderr = adb.run_raw(req.command)
+        stdout, stderr = adb.run_raw(req.command, device_id=device_id)
     except adb.ADBError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     return {"stdout": stdout, "stderr": stderr}
