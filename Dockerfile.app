@@ -1,6 +1,6 @@
 FROM android-emulator-docker-base
 
-WORKDIR /home/ubuntu/app
+WORKDIR /home/ubuntu
 COPY ./setup_base.sh ./setup.sh
 
 RUN chmod 777 ./setup.sh
@@ -29,14 +29,21 @@ RUN ./setup.sh
 
 EXPOSE 80
 
-COPY ./app ./
+COPY ./app ./app
 
-RUN chmod -R 777 ../app
+RUN chmod -R 777 ./android-sdk
+RUN chmod -R 777 ./app
+
+WORKDIR /home/ubuntu/app
+
+USER ubuntu
 
 LABEL maintainer="Ason CS"
 LABEL org.opencontainers.image.description="Android Emulator Docker"
 
 CMD ["./entrypoint.sh"]
 # docker build -t=android-emulator-docker-app -f=Dockerfile.app .
-# docker-compose -f=docker-compose.app.yaml up -d --build
+# export ADB_KEY=$(cat ~/.android/adbkey)
+# docker compose -f 'docker-compose.yaml' up -d --build 'app'
+# docker-compose up -d --build
 # docker-compose down

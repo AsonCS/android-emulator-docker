@@ -6,6 +6,7 @@ COPY ./setup.sh ./setup.sh
 COPY ./setup_base.sh ./setup_base.sh
 RUN chmod 777 ./setup.sh
 RUN chmod 777 ./setup_base.sh
+RUN echo 'root:root' | chpasswd
 
 
 #============================================
@@ -52,31 +53,35 @@ RUN ./setup.sh
 #============================================
 # Application code
 #============================================
-HEALTHCHECK --interval=60s --retries=3 --start-interval=2m --timeout=5s \
+HEALTHCHECK --interval=60s --retries=3 --start-interval=5m --timeout=5s \
   CMD curl -f http://localhost/emulator/status || exit 1
 
-EXPOSE 5554 5555 80
+EXPOSE 5594 5595 80
 
 COPY ./app ./app
 COPY ./android-sdk/apks ./android-sdk/apks
 COPY ./android-sdk/priv-apks ./android-sdk/priv-apks
 COPY ./build_image.sh ./build_image.sh
 COPY ./entrypoint.sh ./entrypoint.sh
+COPY ./entrypoint.py ./entrypoint.py
 
 RUN chmod 777 ./build_image.sh
 RUN chmod 777 ./entrypoint.sh
+RUN chmod 777 ./entrypoint.py
 RUN chmod -R 777 ./app
 RUN chmod -R 777 ./android-sdk
+
+USER ubuntu
 
 LABEL maintainer="Ason CS"
 LABEL org.opencontainers.image.description="Android Emulator Docker"
 
 CMD ["./entrypoint.sh"]
 # docker build -t=android-emulator-docker-emulator -f=Dockerfile.emulator .
+# docker compose -f 'docker-compose.yaml' up -d --build 'emulator'
 # docker builder prune
 # docker builder prune -a
 # docker image prune
-# docker-compose -f=docker-compose.emulator.yaml up -d --build
-# docker-compose down
 # docker run -d --rm --device /dev/kvm --name=android-emulator-docker-emulator -p=8000:80 -p=5554:5554 -p=5555:5555 -e ADB_KEY="$(cat ~/.android/adbkey)" android-emulator-docker-emulator sleep infinity
+# docker exec -it android-emulator-docker-emulator bash
 # docker exec -u root -it android-emulator-docker-emulator bash

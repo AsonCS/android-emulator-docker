@@ -6,7 +6,13 @@ services:
       dockerfile: Dockerfile.app
     container_name: android-emulator-docker-app
     volumes:
+      - ./.devcontainer:/home/ubuntu/.devcontainer
+      - ./.dockerignore:/home/ubuntu/.dockerignore
+      - ./.env:/home/ubuntu/.env
       - ./app:/home/ubuntu/app
+      - ./docker-compose.yaml:/home/ubuntu/docker-compose.yaml
+      - ./Dockerfile.app:/home/ubuntu/Dockerfile.app
+      - ./Dockerfile.base:/home/ubuntu/Dockerfile.base
     environment:
       - ADB_KEY=$ADB_KEY # export ADB_KEY=$(cat ~/.android/adbkey)
     ports:
@@ -15,19 +21,19 @@ services:
       - host.docker.internal:172.17.0.1
     command: sleep infinity
   
-  emulator:
-    build:
-      context: .
-      dockerfile: Dockerfile.emulator
-    container_name: android-emulator-docker-emulator
-    devices:
-      - /dev/kvm
-    environment:
-      - ADB_KEY=$ADB_KEY # export ADB_KEY=$(cat ~/.android/adbkey)
-    ports:
-      - "8000:80"
-      - "5554:5554"
-      - "5555:5555"
-    extra_hosts:
-      - host.docker.internal:172.17.0.1
-    # command: sleep infinity
+  # emulator:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.emulator
+  #   container_name: android-emulator-docker-emulator
+  #   devices:
+  #     - /dev/kvm
+  #   environment:
+  #     - ADB_KEY=$ADB_KEY # export ADB_KEY=$(cat ~/.android/adbkey)
+  #   ports:
+  #     - "8000:80"
+  #     - "5594:5594"
+  #     - "5595:5595"
+  #   extra_hosts:
+  #     - host.docker.internal:172.17.0.1
+  #   # command: sleep infinity

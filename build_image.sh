@@ -58,6 +58,14 @@ runEmulator() {
         $EMULATOR_ARGS &> $file \
         & echo "Emulator logs in $file" 
     waitForDevice
+    # sleep 10
+    # $ANDROID_PATH_PLATFORM_TOOLS/adb shell settings put global adb_wifi_enabled 1
+    # sleep 5
+    # $ANDROID_PATH_PLATFORM_TOOLS/adb shell input tap 428 590
+    # sleep 5
+    # $ANDROID_PATH_PLATFORM_TOOLS/adb shell input tap 1453 707
+    # $ANDROID_PATH_PLATFORM_TOOLS/adb shell settings put global stay_on_while_plugged_in 0
+    # $ANDROID_PATH_PLATFORM_TOOLS/adb shell settings put system screen_off_timeout 60000
 }
 
 pushFile() {

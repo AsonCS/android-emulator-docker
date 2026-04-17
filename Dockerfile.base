@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     unzip \
     curl \
+    socat \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean;
 

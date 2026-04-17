@@ -1,0 +1,21 @@
+import pexpect
+
+child = pexpect.spawn('su')
+child.expect('Password:')
+child.sendline('root')
+child.expect('#', timeout=60) # Wait for root prompt
+child.sendline('chmod -R 777 /root')
+child.expect('#', timeout=120)
+child.sendline('chmod -R 777 /home/ubuntu')
+child.expect('#', timeout=180)
+child.sendline('chmod -R 777 /dev/kvm')
+child.expect('#', timeout=120)
+child.sendline('mkdir -p /root/.android')
+child.expect('#', timeout=60)
+child.sendline('mkdir -p /home/ubuntu/.android')
+child.expect('#', timeout=60)
+child.sendline('chmod -R 777 /root/.android')
+child.expect('#', timeout=60)
+child.sendline('chmod -R 777 /home/ubuntu/.android')
+child.expect('#', timeout=60)
+child.sendline('exit')

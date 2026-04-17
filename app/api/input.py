@@ -52,7 +52,7 @@ class TextRequest(BaseModel):
 
 class KeyRequest(BaseModel):
     keycode: str = Field(
-        ..., description="Android keycode name (e.g. KEYCODE_HOME) or integer"
+        ..., description="Android keycode name (e.g. KEYCODE_POWER, KEYCODE_HOME) or integer"
     )
 
     model_config = ConfigDict(
@@ -209,6 +209,10 @@ def text_input(req: TextRequest):
             "content": {
                 "application/json": {
                     "examples": {
+                        "power": {
+                            "summary": "Power key",
+                            "value": {"message": "Key event sent: KEYCODE_POWER"},
+                        },
                         "home": {
                             "summary": "Home key",
                             "value": {"message": "Key event sent: KEYCODE_HOME"},
@@ -239,7 +243,7 @@ def key_event(req: KeyRequest):
     """
     Simulate a hardware key press on the emulator.
 
-    Accepts either a named keycode (e.g. `KEYCODE_HOME`, `KEYCODE_BACK`, `KEYCODE_POWER`)
+    Accepts either a named keycode (e.g. `KEYCODE_POWER`, `KEYCODE_HOME`, `KEYCODE_BACK`, `KEYCODE_POWER`)
     or a raw integer keycode. The full list of Android keycodes is available at
     [https://developer.android.com/reference/android/view/KeyEvent](https://developer.android.com/reference/android/view/KeyEvent).
     """

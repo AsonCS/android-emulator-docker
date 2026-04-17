@@ -4,3 +4,4 @@ python-multipart>=0.0.9
 aiofiles>=23.2.0
 python-socketio>=5.9.0
 python-engineio>=4.7.0
+pexpect==4.9.0

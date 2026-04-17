@@ -78,7 +78,7 @@ This project provides a REST API interface written in Python to control, monitor
 * **Text Input (`POST /input/text`):**
     * *Description:* Types a given string into the currently focused text field.
 * **Key Event (`POST /input/key`):**
-    * *Description:* Simulates physical hardware buttons (e.g., `KEYCODE_HOME`, `KEYCODE_BACK`, `KEYCODE_POWER`).
+    * *Description:* Simulates physical hardware buttons (e.g., `KEYCODE_POWER`, `KEYCODE_HOME`, `KEYCODE_BACK`, `KEYCODE_POWER`).
 
 ### 5.8. Environment Simulation (Added Feature)
 * **Mock Location (`POST /env/location`):**

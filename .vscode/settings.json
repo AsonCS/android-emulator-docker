@@ -9,7 +9,9 @@
         "devicecontrol",
         "logcat",
         "nohup",
+        "reuseaddr",
         "sdkmanager",
-        "SDKMANAGER"
+        "SDKMANAGER",
+        "socat"
     ]
 }
