@@ -10,6 +10,17 @@ configureAdbKey() {
 
 echo "Giving permissions..."
 python3 ./entrypoint.py
+
+# if [ ! -f "configured.txt" ]; then
+#     echo "Not configured"
+#     echo 1 > configured.txt
+#     configureAdbKey
+#     ./build_image.sh "-no-audio -no-window" "false"
+#     sleep infinity # To commit image
+# else
+#     ./build_image.sh "-no-audio -no-window" "true"
+# fi
+
 configureAdbKey
 ./build_image.sh "-no-audio -no-window"
 

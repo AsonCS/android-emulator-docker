@@ -32,6 +32,8 @@ services:
       - /dev/kvm
     environment:
       - ADB_KEY=$ADB_KEY # export ADB_KEY=$(cat ~/.android/adbkey)
+    # network_mode: host #  --network host
+    # privileged: true
     ports:
       - "8000:80"
       - "5594:5594"

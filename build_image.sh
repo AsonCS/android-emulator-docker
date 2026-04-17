@@ -17,6 +17,8 @@ fi
 
 EMULATOR_ARGS=$1
 echo "EMULATOR_ARGS $EMULATOR_ARGS"
+RUN_ONLY=$2
+echo "RUN_ONLY $RUN_ONLY"
 
 createEmulator() {
     echo "createEmulator | $ANDROID_PATH_CMDLINE_TOOLS $ANDROID_AVD_HOME $EMULATOR_NAME $EMULATOR_DEVICE $ANDROID_API_VERSION $EMULATOR_TARGET $EMULATOR_ARCH"
@@ -140,11 +142,19 @@ configPrivApks() {
     waitForDevice
 }
 
-createEmulator
-runEmulator
-configApks
-configPrivApks
-
-# $ANDROID_PATH_PLATFORM_TOOLS/adb emu kill
+if [ "$RUN_ONLY" == "true" ]; then
+    runEmulator
+elif [ "$RUN_ONLY" == "false" ]; then
+    createEmulator
+    runEmulator
+    configApks
+    configPrivApks
+    $ANDROID_PATH_PLATFORM_TOOLS/adb emu kill
+else
+    createEmulator
+    runEmulator
+    configApks
+    configPrivApks
+fi
 
 echo "finished..."
