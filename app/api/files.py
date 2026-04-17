@@ -1,14 +1,16 @@
 """
 File system management routes.
 
-POST /files/emulator/push   – upload a file from client → container → emulator
-GET  /files/emulator/pull   – pull a file from emulator → container → client
-GET  /files/container        – list container files, or download one
-POST /files/container        – upload a file into the container storage
+POST /files/emulator/push   - upload a file from client -> container -> emulator
+GET  /files/emulator/pull   - pull a file from emulator -> container -> client
+GET  /files/container       - list container files, or download one
+POST /files/container       - upload a file into the container storage
+POST /files/tmp/clean       - remove all files and folders inside /tmp/emulator_api
 """
 import os
 import tempfile
 import logging
+import shutil
 from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, File, HTTPException, Query, UploadFile
@@ -22,6 +24,8 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 _ALLOWED_DEST_PREFIXES = ("/sdcard/", "/data/local/tmp/")
+_APP_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_TMP_CLEAN_ROOT = "/tmp/emulator_api"
 
 
 # ── Response models ────────────────────────────────────────────────────────────
@@ -68,6 +72,24 @@ class ErrorResponse(BaseModel):
     )
 
 
+class TmpCleanResponse(BaseModel):
+    message: str
+    cleaned_root: str
+    deleted: list[str]
+    failed: list[str]
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "message": "Tmp directory cleanup complete",
+                "cleaned_root": "/tmp/emulator_api",
+                "deleted": ["/tmp/emulator_api/bugreports", "/tmp/emulator_api/tmpfyd0b1ze"],
+                "failed": [],
+            }
+        }
+    )
+
+
 # ── Path validation ─────────────────────────────────────────────────────────────
 
 
@@ -80,6 +102,17 @@ def _validate_emulator_dest(dest: str) -> None:
                 f"{list(_ALLOWED_DEST_PREFIXES)}"
             ),
         )
+
+
+def _resolve_relative_to_app(path: str) -> str:
+    """
+    Resolve a relative path against the app root and ensure it does not escape.
+    """
+    resolved = os.path.realpath(os.path.join(_APP_ROOT, path))
+    app_root_real = os.path.realpath(_APP_ROOT)
+    if not resolved.startswith(app_root_real + os.sep) and resolved != app_root_real:
+        raise ValueError(f"Path '{path}' escapes the app directory")
+    return resolved
 
 
 # ── Emulator I/O ──────────────────────────────────────────────────────────────
@@ -253,8 +286,18 @@ def pull_from_emulator(
 def container_get(
     path: Optional[str] = Query(
         None,
-        description="Relative file path inside container storage to download. Omit to list all files.",
-        examples=["captures/screenshot.png"],
+        description=(
+            "Path to download. Supports: "
+            "1) container storage-relative paths, "
+            "2) app-root-relative paths, "
+            "3) absolute paths. "
+            "Omit to list all files in container storage."
+        ),
+        examples=[
+            "captures/screenshot.png",
+            "bugreport-sdk_phone64_x86_64-UE1A.230829.036.A1-2026-04-17-19-07-32.zip",
+            "/home/ubuntu/app/bugreport-sdk_phone64_x86_64-UE1A.230829.036.A1-2026-04-17-19-07-32.zip",
+        ],
     ),
 ):
     """
@@ -264,19 +307,32 @@ def container_get(
     if path is None:
         return {"files": fs.list_container_files()}
 
+    if os.path.isabs(path):
+        abs_path = os.path.realpath(path)
+        if not os.path.isfile(abs_path):
+            raise HTTPException(status_code=404, detail=f"File not found: {path}")
+        return FileResponse(path=abs_path, filename=os.path.basename(abs_path))
+
     try:
         data = fs.read_from_container(path)
-    except FileNotFoundError as exc:
-        raise HTTPException(status_code=404, detail=str(exc))
+        filename = os.path.basename(path)
+        return Response(
+            content=data,
+            media_type="application/octet-stream",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    except FileNotFoundError:
+        try:
+            abs_path = _resolve_relative_to_app(path)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
 
-    filename = os.path.basename(path)
-    return Response(
-        content=data,
-        media_type="application/octet-stream",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-    )
+        if not os.path.isfile(abs_path):
+            raise HTTPException(status_code=404, detail=f"File not found: {path}")
+
+        return FileResponse(path=abs_path, filename=os.path.basename(abs_path))
 
 
 @router.post(
@@ -326,3 +382,71 @@ async def container_post(
         raise HTTPException(status_code=400, detail=str(exc))
 
     return {"message": "File saved", "path": os.path.relpath(saved, fs.CONTAINER_DIR)}
+
+
+@router.post(
+    "/tmp/clean",
+    response_model=TmpCleanResponse,
+    summary="Clean /tmp folder contents",
+    responses={
+        200: {
+            "content": {
+                "application/json": {
+                    "example": {
+                        "message": "Tmp directory cleanup complete",
+                        "cleaned_root": "/tmp/emulator_api",
+                        "deleted": ["/tmp/emulator_api/bugreports", "/tmp/emulator_api/tmpfyd0b1ze"],
+                        "failed": [],
+                    }
+                }
+            }
+        },
+        500: {
+            "model": ErrorResponse,
+            "description": "Cleanup root validation failed",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Cleanup root mismatch: expected '/tmp/emulator_api'"}
+                }
+            },
+        },
+    },
+)
+def clean_tmp_folder():
+    """
+    Remove all files and directories inside `/tmp/emulator_api`.
+
+    The `/tmp/emulator_api` directory itself is preserved.
+    """
+    root = os.path.realpath(_TMP_CLEAN_ROOT)
+    if root != _TMP_CLEAN_ROOT:
+        raise HTTPException(status_code=500, detail="Cleanup root mismatch: expected '/tmp/emulator_api'")
+
+    if not os.path.isdir(root):
+        raise HTTPException(status_code=500, detail="Cleanup root not found: '/tmp/emulator_api'")
+
+    deleted: list[str] = []
+    failed: list[str] = []
+
+    with os.scandir(root) as entries:
+        for entry in entries:
+            target_path = entry.path
+            try:
+                if entry.is_dir(follow_symlinks=False):
+                    shutil.rmtree(target_path)
+                else:
+                    os.unlink(target_path)
+                deleted.append(target_path)
+            except FileNotFoundError:
+                # Entry disappeared between scan and delete.
+                continue
+            except OSError as exc:
+                failed.append(f"{target_path}: {exc}")
+
+    logger.info("/tmp cleanup finished: deleted=%d failed=%d", len(deleted), len(failed))
+    return {
+        "message": "Tmp directory cleanup complete",
+        "cleaned_root": root,
+        "deleted": deleted,
+        "failed": failed,
+    }

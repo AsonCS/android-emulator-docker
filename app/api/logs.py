@@ -303,6 +303,10 @@ def logcat_search_regex(
     Regex Examples:
     - `.*(okhttp.OkHttpClient: --> [^(end)]).*` Catch the entire single line of an OkHttp request, but not the response.
     - `okhttp.OkHttpClient: --> [^(end)]` Same as above.
+    - `19:39(.)*okhttp` hour and minute filer
+    - `18:[2-4](.)*okhttp` minutes range
+    - `04-17 18:[2-4](.)*okhttp` minutes range with day
+    - `((19:09)|(19:39))(.)*okhttp` "or" operator
     """
     regex_flags = 0
     supported_flags = {"i": re.IGNORECASE, "m": re.MULTILINE, "s": re.DOTALL}

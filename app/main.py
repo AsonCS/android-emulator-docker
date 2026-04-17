@@ -8,7 +8,7 @@ from socketio import ASGIApp
 
 import config
 import screencast
-from api import adb, app as app_router, emulator, env, files
+from api import adb, app as app_router, diagnostics, emulator, env, files
 from api import input as input_router
 from api import logs, screen
 
@@ -29,6 +29,10 @@ TAGS_METADATA = [
     {
         "name": "Logs",
         "description": "Retrieve and filter logcat output from the Android emulator.",
+    },
+    {
+        "name": "Diagnostics",
+        "description": "Collect Android diagnostics via dumpsys, dumpstate, and bugreport.",
     },
     {
         "name": "Files",
@@ -78,6 +82,7 @@ application.include_router(emulator.router, prefix="/emulator", tags=["Emulator"
 application.include_router(adb.router, prefix="/adb", tags=["ADB"])
 application.include_router(screen.router, prefix="/screen", tags=["Screen"])
 application.include_router(logs.router, prefix="/logs", tags=["Logs"])
+application.include_router(diagnostics.router, prefix="/diagnostics", tags=["Diagnostics"])
 application.include_router(files.router, prefix="/files", tags=["Files"])
 application.include_router(app_router.router, prefix="/app", tags=["App"])
 application.include_router(input_router.router, prefix="/input", tags=["Input"])
