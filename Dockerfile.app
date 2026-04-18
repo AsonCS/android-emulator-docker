@@ -22,12 +22,21 @@ ENV PYTHONUNBUFFERED=1
 
 ENV API_PORT=80
 
+ENV ANDROID_HOME="/home/ubuntu/android-sdk"
+ENV ANDROID_AVD_HOME="$ANDROID_HOME/.android/avd"
+ENV ANDROID_SDK_ROOT=$ANDROID_HOME
+
+ENV ANDROID_PATH_CMDLINE_TOOLS="$ANDROID_HOME/cmdline-tools/latest/bin"
+ENV ANDROID_PATH_PLATFORM_TOOLS="$ANDROID_HOME/platform-tools"
+
+ENV PATH="$PATH:$ANDROID_PATH_CMDLINE_TOOLS:$ANDROID_PATH_PLATFORM_TOOLS"
+
 
 #============================================
 # Application code
 #============================================
 HEALTHCHECK \
-  CMD curl -f http://localhost || exit 1
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost')"
 
 EXPOSE 80
 
