@@ -1,3 +1,5 @@
+.git
+
 __pycache__/
 *.pyc
 *.pyo
@@ -5,7 +7,13 @@ __pycache__/
 .venv/
 venv/
 *.egg-info/
-dist/
 build/
+dist/
 .pytest_cache/
 /tmp/
+
+bin/
+lib/
+lib64/
+main.spec
+pyvenv.cfg

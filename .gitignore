@@ -16,6 +16,10 @@ dist/
 build/
 wheels/
 .eggs/
+lib/
+lib64/
+lib64
+app/bin/
 
 # Virtual environments
 .venv/
