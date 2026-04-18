@@ -9,19 +9,17 @@ services:
       - ./.devcontainer:/home/ubuntu/.devcontainer
       - ./.dockerignore:/home/ubuntu/.dockerignore
       - ./.env:/home/ubuntu/.env
-      # - ./android-sdk/platform-tools:/home/ubuntu/android-sdk/platform-tools
       - ./app:/home/ubuntu/app
       - ./docker-compose.yaml:/home/ubuntu/docker-compose.yaml
       - ./Dockerfile.app:/home/ubuntu/Dockerfile.app
       - ./Dockerfile.base:/home/ubuntu/Dockerfile.base
-    environment:
-      - ADB_KEY=$ADB_KEY # export ADB_KEY=$(cat ~/.android/adbkey)
+    env_file:
+      - ./.env
     ports:
       - "8001:80"
     extra_hosts:
-      # - host.docker.internal:172.17.0.1
       - host.docker.internal:host-gateway
-    command: sleep infinity
+    # command: sleep infinity
   
   emulator:
     build:
@@ -30,14 +28,11 @@ services:
     container_name: android-emulator-docker-emulator
     devices:
       - /dev/kvm
-    environment:
-      - ADB_KEY=$ADB_KEY # export ADB_KEY=$(cat ~/.android/adbkey)
-    # network_mode: host #  --network host
-    # privileged: true
+    env_file:
+      - ./.env
     ports:
       - "8000:80"
-      - "5594:5594"
       - "5595:5595"
     extra_hosts:
-      - host.docker.internal:172.17.0.1
+      - host.docker.internal:host-gateway
     # command: sleep infinity

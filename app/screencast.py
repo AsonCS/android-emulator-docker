@@ -98,8 +98,6 @@ async def _logcat_loop(sio: AsyncServer, sid: str):
     logcat_command = [config.ADB_PATH]
     if device_id:
         logcat_command.extend(["-s", device_id])
-    else:
-        logcat_command.extend(["-s", config.EMULATOR_SERIAL])
     logcat_command.extend(["logcat", "-v", "time", "-T", "1"])
 
     try:

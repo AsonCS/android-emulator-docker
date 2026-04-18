@@ -17,7 +17,6 @@ mkdir -p $ANDROID_HOME/priv-apks
 installPackagesWithSdkManager() {
     echo "installPackagesWithSdkManager | $ANDROID_PATH_CMDLINE_TOOLS $ANDROID_BUILD_TOOLS $ANDROID_API_VERSION $EMULATOR_TARGET $EMULATOR_ARCH"
     yes Y | $ANDROID_PATH_CMDLINE_TOOLS/sdkmanager --verbose "emulator" "build-tools;$ANDROID_BUILD_TOOLS" "platforms;android-$ANDROID_API_VERSION" "system-images;android-$ANDROID_API_VERSION;$EMULATOR_TARGET;$EMULATOR_ARCH"
-    # $ANDROID_PATH_CMDLINE_TOOLS/sdkmanager --list | grep android-${ANDROID_API_VERSION}
 }
 
 downloadApks() {
@@ -59,4 +58,4 @@ downloadPrivApks
 echo "ls $ANDROID_HOME"
 ls $ANDROID_HOME
 
-echo "finished..."
+echo "setup finished..."

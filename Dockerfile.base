@@ -1,11 +1,9 @@
 FROM ubuntu:24.04
 
-LABEL maintainer="Ason CS"
-LABEL org.opencontainers.image.description="Android Emulator Docker"
+WORKDIR /home/ubuntu
+RUN chown -R ubuntu:ubuntu /home/ubuntu
 
-WORKDIR /home/ubuntu/app
-
-COPY ./app/requirements.txt ./requirements.txt
+COPY --chown=ubuntu:ubuntu ./app/requirements.txt ./requirements.txt
 
 #============================================
 # Install Dependences
@@ -30,5 +28,34 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 #============================================
 RUN pip3 install --no-cache-dir --break-system-packages -r ./requirements.txt
 
+
+#============================================
+# Env vars
+#============================================
+ENV ANDROID_CMD="commandlinetools-linux-14742923_latest.zip"
+
+ENV ANDROID_HOME="/home/ubuntu/android-sdk"
+ENV ANDROID_AVD_HOME="$ANDROID_HOME/.android/avd"
+ENV ANDROID_SDK_ROOT=$ANDROID_HOME
+
+ENV ANDROID_PATH_CMDLINE_TOOLS="$ANDROID_HOME/cmdline-tools/latest/bin"
+ENV ANDROID_PATH_PLATFORM_TOOLS="$ANDROID_HOME/platform-tools"
+
+ENV PATH="$PATH:$ANDROID_PATH_CMDLINE_TOOLS:$ANDROID_PATH_PLATFORM_TOOLS"
+
+
+#============================================
+# Configure Android SDK
+#============================================
+COPY --chown=ubuntu:ubuntu ./setup_base.sh ./setup_base.sh
+RUN chmod +x ./setup_base.sh
+RUN ./setup_base.sh
+
+
+#============================================
+# Application code
+#============================================
+LABEL maintainer="Ason CS"
+LABEL org.opencontainers.image.description="Android Emulator Docker"
+
 CMD ["sleep", "infinity"]
-# docker build -t=android-emulator-docker-base -f=Dockerfile.base .

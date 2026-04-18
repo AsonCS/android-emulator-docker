@@ -1,5 +1,6 @@
 import os
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 
 from fastapi import FastAPI, Query
 from fastapi.staticfiles import StaticFiles
@@ -87,6 +88,32 @@ application.include_router(files.router, prefix="/files", tags=["Files"])
 application.include_router(app_router.router, prefix="/app", tags=["App"])
 application.include_router(input_router.router, prefix="/input", tags=["Input"])
 application.include_router(env.router, prefix="/env", tags=["Environment"])
+
+
+@application.get(
+    "/",
+    summary="Healthcheck",
+    responses={
+        200: {
+            "description": "Service readiness status",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "timestamp": "2023-10-27T14:30:00Z",
+                        "status": 200,
+                        "message": "Ready",
+                    }
+                }
+            },
+        }
+    },
+)
+async def healthcheck():
+    return {
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "status": 200,
+        "message": "Ready",
+    }
 
 
 # ── Screencast (Socket.IO) ─────────────────────────────────────────────────────

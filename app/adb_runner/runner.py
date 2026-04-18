@@ -126,7 +126,7 @@ def _resolve_target_device(device_id: Optional[str] = None) -> str:
     if online_devices:
         return online_devices[0]
 
-    default_target = config.EMULATOR_SERIAL
+    default_target = "emulator-5554"
     _connect_device(default_target)
     refreshed = _list_online_devices()
     if any(_device_matches(d, default_target) for d in refreshed):

@@ -13,11 +13,9 @@ installCommandlineTools() {
     echo "installCommandlineTools | $ANDROID_CMD $ANDROID_HOME"
     rm -rf $ANDROID_HOME/cmdline-tools
     mkdir -p $ANDROID_HOME/cmdline-tools/latest
-    chmod -R 777 $ANDROID_HOME/cmdline-tools
-    wget https://dl.google.com/android/repository/$ANDROID_CMD
+    wget https://dl.google.com/android/repository/$ANDROID_CMD || exit 1
     unzip $ANDROID_CMD
     mv ./cmdline-tools/NOTICE.txt ./cmdline-tools/source.properties ./cmdline-tools/bin ./cmdline-tools/lib $ANDROID_HOME/cmdline-tools/latest/
-    chmod -R 777 $ANDROID_HOME/cmdline-tools
     rm -rf $ANDROID_CMD
     rm -rf ./cmdline-tools
 }
@@ -34,4 +32,4 @@ installPlatformTools
 echo "ls $ANDROID_HOME"
 ls $ANDROID_HOME
 
-echo "finished..."
+echo "setup_base finished..."

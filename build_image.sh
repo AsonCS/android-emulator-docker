@@ -9,7 +9,6 @@ if [ -z "$ANDROID_AVD_HOME" ] ||
     [ -z "$ANDROID_PATH_CMDLINE_TOOLS" ] ||
     [ -z "$ANDROID_PATH_PLATFORM_TOOLS" ] ||
     [ -z "$ANDROID_PATH_EMULATOR" ] ||
-    [ -z "$EMULATOR_PORT" ] ||
     [ -z "$ANDROID_HOME" ]; then
     echo "Required variables are missing."
     exit 1
@@ -23,10 +22,6 @@ echo "RUN_ONLY $RUN_ONLY"
 createEmulator() {
     echo "createEmulator | $ANDROID_PATH_CMDLINE_TOOLS $ANDROID_AVD_HOME $EMULATOR_NAME $EMULATOR_DEVICE $ANDROID_API_VERSION $EMULATOR_TARGET $EMULATOR_ARCH"
     mkdir -p $ANDROID_AVD_HOME || echo "$ANDROID_AVD_HOME exixts"
-    chmod -R 777 $ANDROID_AVD_HOME
-    # $ANDROID_PATH_CMDLINE_TOOLS/avdmanager list devices | grep $EMULATOR_DEVICE
-    # $ANDROID_PATH_EMULATOR/emulator -list-avds
-    # $ANDROID_PATH_CMDLINE_TOOLS/avdmanager delete avd -n $EMULATOR_NAME
     $ANDROID_PATH_CMDLINE_TOOLS/avdmanager --verbose create avd --force -n $EMULATOR_NAME -d $EMULATOR_DEVICE -k "system-images;android-$ANDROID_API_VERSION;$EMULATOR_TARGET;$EMULATOR_ARCH"
     sed -i "s/hw.lcd.height=1600/hw.lcd.height=1080/g" "$ANDROID_AVD_HOME/$EMULATOR_NAME.avd/config.ini"
     sed -i "s/hw.initialOrientation=portrait/hw.initialOrientation=landscape/g" "$ANDROID_AVD_HOME/$EMULATOR_NAME.avd/config.ini"
@@ -42,13 +37,12 @@ waitForDevice() {
 }
 
 runEmulator() {
-    echo "runEmulator | $ANDROID_PATH_EMULATOR $EMULATOR_NAME $EMULATOR_PORT"
-    # $ANDROID_PATH_EMULATOR/emulator -list-avds
+    echo "runEmulator | $ANDROID_PATH_EMULATOR $EMULATOR_NAME"
     file="./$EMULATOR_NAME-$(date "+%Y%m%d%H%M%S").log"
     touch $file
     $ANDROID_PATH_EMULATOR/emulator \
         -avd "$EMULATOR_NAME" \
-        -port $EMULATOR_PORT \
+        -port 5554 \
         -skip-adb-auth \
         -no-boot-anim \
         -writable-system \
@@ -60,14 +54,6 @@ runEmulator() {
         $EMULATOR_ARGS &> $file \
         & echo "Emulator logs in $file" 
     waitForDevice
-    # sleep 10
-    # $ANDROID_PATH_PLATFORM_TOOLS/adb shell settings put global adb_wifi_enabled 1
-    # sleep 5
-    # $ANDROID_PATH_PLATFORM_TOOLS/adb shell input tap 428 590
-    # sleep 5
-    # $ANDROID_PATH_PLATFORM_TOOLS/adb shell input tap 1453 707
-    # $ANDROID_PATH_PLATFORM_TOOLS/adb shell settings put global stay_on_while_plugged_in 0
-    # $ANDROID_PATH_PLATFORM_TOOLS/adb shell settings put system screen_off_timeout 60000
 }
 
 pushFile() {
@@ -116,7 +102,6 @@ configPrivApks() {
         if [ -d "$folder" ]; then
             package=$(basename $folder)
             echo $package
-            # echo $($ANDROID_PATH_PLATFORM_TOOLS/adb uninstall $package 2>&1)
             remote_apks_dir="/system/priv-app"
             remote_permissions_dir="/system/etc/permissions"
             for file in $ANDROID_HOME/priv-apks/$package/*; do
@@ -126,13 +111,10 @@ configPrivApks() {
                         apk_name="${apk%%.*}"
                         remote_dir="$remote_apks_dir/$apk_name"
                         pushFile $remote_dir $apk $file
-                        # echo "ls $remote_apks_dir: $($ANDROID_PATH_PLATFORM_TOOLS/adb shell ls "$remote_apks_dir" | grep "$apk_name")"
-                        # echo "ls $remote_dir: $($ANDROID_PATH_PLATFORM_TOOLS/adb shell ls "$remote_dir")"
                     fi
                     if [ "${file##*.}" == "xml" ]; then
                         xml=$(basename $file)
                         pushFile $remote_permissions_dir $xml $file
-                        # echo "ls $remote_permissions_dir: $($ANDROID_PATH_PLATFORM_TOOLS/adb shell ls "$remote_permissions_dir" | grep "$package")"
                     fi
                 fi
             done
@@ -157,4 +139,4 @@ else
     configPrivApks
 fi
 
-echo "finished..."
+echo "build_image finished..."
