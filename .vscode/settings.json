@@ -23,6 +23,8 @@
         "reuseaddr",
         "sdkmanager",
         "SDKMANAGER",
-        "socat"
+        "socat",
+        "uroot",
+        "uvicorn"
     ]
 }

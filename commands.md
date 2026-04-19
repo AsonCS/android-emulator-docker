@@ -38,7 +38,7 @@
 - `docker build --no-cache --progress=plain -t=android-emulator-docker-emulator -f=Dockerfile.emulator .`
 - `docker run -d --rm --device /dev/kvm --name=android-emulator-docker-emulator -p=8000:80 -p=5595:5595 -e ADB_KEY="$(cat ~/.android/adbkey)" android-emulator-docker-emulator sleep infinity`
 - `docker exec -it android-emulator-docker-emulator bash`
-- `docker exec -u root -it android-emulator-docker-emulator bash`
+- `docker exec -uroot -it android-emulator-docker-emulator bash`
 
 ## Others
 
