@@ -6,20 +6,14 @@ services:
       dockerfile: Dockerfile.app
     container_name: android-emulator-docker-app
     volumes:
-      - ./.devcontainer:/home/ubuntu/.devcontainer
-      - ./.dockerignore:/home/ubuntu/.dockerignore
-      - ./.env:/home/ubuntu/.env
-      - ./app:/home/ubuntu/app
-      - ./docker-compose.yaml:/home/ubuntu/docker-compose.yaml
-      - ./Dockerfile.app:/home/ubuntu/Dockerfile.app
-      - ./Dockerfile.base:/home/ubuntu/Dockerfile.base
+      - .:/home/ubuntu
     env_file:
       - ./.env
     ports:
       - "8001:80"
     extra_hosts:
       - host.docker.internal:host-gateway
-    # command: sleep infinity
+    command: sleep infinity
   
   emulator:
     build:
@@ -27,7 +21,7 @@ services:
       dockerfile: Dockerfile.emulator
     container_name: android-emulator-docker-emulator
     devices:
-      - /dev/kvm
+      - /dev/kvm:/dev/kvm:rwm
     env_file:
       - ./.env
     ports:

@@ -46,6 +46,9 @@ coverage.xml
 # IDEs
 .idea/
 *.iml
+.cache
+.dotnet
+.vscode-server
 
 # Temp / runtime artefacts
 /tmp/
@@ -56,3 +59,4 @@ coverage.xml
 # OS
 .DS_Store
 Thumbs.db
+.bash_history

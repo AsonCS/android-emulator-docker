@@ -32,16 +32,7 @@ What the script does:
 
 Run it:
 
-#### Linux / WSL
-
-```bash
-git clone https://github.com/AsonCS/android-emulator-docker.git
-cd android-emulator-docker/
-chmod +x ./run_app.sh
-./run_app.sh
-```
-
-#### Windows (Git Bash)
+#### Linux / WSL | Windows (Git Bash) | Mac
 
 ```bash
 git clone https://github.com/AsonCS/android-emulator-docker.git
@@ -188,7 +179,6 @@ Use it as a quick operational reference when debugging or running commands manua
   - Installs APKs and pushes privileged APK/XML files into system paths
 
 - [`entrypoint.sh`](entrypoint.sh)
-  - Applies KVM permissions via `entrypoint.py`
   - Configures ADB private key from `ADB_KEY`
   - Starts emulator flow through `build_image.sh`
   - Forwards ADB TCP with `socat`

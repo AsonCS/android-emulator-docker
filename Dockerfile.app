@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 FROM android-emulator-docker-base AS base
 
 
@@ -16,20 +18,20 @@ RUN chown -R ubuntu:ubuntu /home/ubuntu/app
 #============================================
 # Env vars
 #============================================
+ARG ANDROID_HOME
+ARG ANDROID_PATH_PLATFORM_TOOLS
+
 # Prevent Python from writing .pyc files and enable unbuffered logging
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 ENV API_PORT=80
 
-ENV ANDROID_HOME="/home/ubuntu/android-sdk"
-ENV ANDROID_AVD_HOME="$ANDROID_HOME/.android/avd"
+ENV ANDROID_HOME=$ANDROID_HOME
 ENV ANDROID_SDK_ROOT=$ANDROID_HOME
+ENV ANDROID_PATH_PLATFORM_TOOLS=$ANDROID_PATH_PLATFORM_TOOLS
 
-ENV ANDROID_PATH_CMDLINE_TOOLS="$ANDROID_HOME/cmdline-tools/latest/bin"
-ENV ANDROID_PATH_PLATFORM_TOOLS="$ANDROID_HOME/platform-tools"
-
-ENV PATH="$PATH:$ANDROID_PATH_CMDLINE_TOOLS:$ANDROID_PATH_PLATFORM_TOOLS"
+ENV PATH="$PATH:$ANDROID_PATH_PLATFORM_TOOLS"
 
 
 #============================================
@@ -40,7 +42,6 @@ HEALTHCHECK \
 
 EXPOSE 80
 
-COPY --chown=ubuntu:ubuntu --from=base /home/ubuntu/android-sdk/cmdline-tools /home/ubuntu/android-sdk/cmdline-tools
 COPY --chown=ubuntu:ubuntu --from=base /home/ubuntu/android-sdk/licenses /home/ubuntu/android-sdk/licenses
 COPY --chown=ubuntu:ubuntu --from=base /home/ubuntu/android-sdk/platform-tools /home/ubuntu/android-sdk/platform-tools
 COPY --chown=ubuntu:ubuntu ./app ./

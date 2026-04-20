@@ -1,8 +1,9 @@
+## Geral
+
+- `$(set -a && source .env && set +a && docker buildx bake)`
+- `docker compose up -d`
+
 ## App
-
-### Compose
-
-- `docker compose up -d --build 'app'`
 
 ### Manual
 - `docker build -t=android-emulator-docker-app -f=Dockerfile.app .`
@@ -28,10 +29,6 @@
 - `$ANDROID_PATH_PLATFORM_TOOLS/adb shell settings put system screen_off_timeout 60000`
 - `echo $($ANDROID_PATH_PLATFORM_TOOLS/adb uninstall $package 2>&1)`
 - `$ANDROID_PATH_CMDLINE_TOOLS/sdkmanager --list | grep android-${ANDROID_API_VERSION}`
-
-### Compose
-
-- `docker compose up -d --build 'emulator'`
 
 ### Manual
 - `docker build -t=android-emulator-docker-emulator -f=Dockerfile.emulator .`

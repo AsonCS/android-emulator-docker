@@ -3,36 +3,46 @@ FROM android-emulator-docker-base
 WORKDIR /home/ubuntu
 RUN chown -R ubuntu:ubuntu /home/ubuntu
 
-RUN echo 'root:root' | chpasswd
-
-USER ubuntu
+# USER ubuntu # Not able to access /dev/kvm when running as non-root user
 
 
 #============================================
 # Env vars
 #============================================
+ARG ANDROID_API_VERSION
+ARG ANDROID_BUILD_TOOLS
+ARG ANDROID_PATH_BUILD_TOOLS
+ARG ANDROID_PATH_EMULATOR
+ARG APKS
+ARG EMULATOR_ARCH
+ARG EMULATOR_DEVICE
+ARG EMULATOR_NAME
+ARG EMULATOR_TARGET
+ARG PRIV_APKS
+
 ENV API_PORT=80
 ENV DISPLAY=:99
 
-# ENV ANDROID_API_VERSION="28"
-ENV ANDROID_API_VERSION="34"
-ENV ANDROID_BUILD_TOOLS="34.0.0"
-# ENV EMULATOR_ARCH="x86"
-ENV EMULATOR_ARCH="x86_64"
-ENV EMULATOR_DEVICE="medium_tablet"
-ENV EMULATOR_NAME="tablet"
-ENV EMULATOR_TARGET="default"
+ENV ANDROID_API_VERSION=$ANDROID_API_VERSION
+ENV ANDROID_BUILD_TOOLS=$ANDROID_BUILD_TOOLS
+ENV APKS=$APKS
+ENV EMULATOR_ARCH=$EMULATOR_ARCH
+ENV EMULATOR_DEVICE=$EMULATOR_DEVICE
+ENV EMULATOR_NAME=$EMULATOR_NAME
+ENV EMULATOR_TARGET=$EMULATOR_TARGET
+ENV PRIV_APKS=$PRIV_APKS
 
-ENV ANDROID_PATH_BUILD_TOOLS="$ANDROID_HOME/build-tools/$ANDROID_BUILD_TOOLS"
-ENV ANDROID_PATH_EMULATOR="$ANDROID_HOME/emulator"
+ENV ANDROID_PATH_BUILD_TOOLS=$ANDROID_PATH_BUILD_TOOLS
+ENV ANDROID_PATH_EMULATOR=$ANDROID_PATH_EMULATOR
 
 ENV PATH="$PATH:$ANDROID_PATH_BUILD_TOOLS:$ANDROID_PATH_EMULATOR"
 
-# Pattern: "'apk_url' 'apk_url2' ..."
-# ENV APKS="'http://files.boxcontrol.io/s/MMZXzCP8zgwfWKb/download/DEV_WeUpdate_v.2.0.43.1_1115_release.apk'"
 
-# Pattern: "'package_name' 'apk_url' 'permission_xml_url' 'package_name2' 'apk_url2' 'permission_xml_url2' ..." 'permission_xml_url' is optional.
-# ENV PRIV_APKS="'com.wetek.devicecontrol' 'http://files.boxcontrol.io/s/gga35cHKNazneLN/download/DEV_DC_2.0.80.4_1385_A9_debug_ADM-4135_5d24e5569d7e2f260274c40dc5ef6bf365e524ca.apk' 'http://files.boxcontrol.io/s/SLYxgKgd8KkgxHE/download/privapp-permissions-com.wetek.devicecontrol.xml' 'com.wetek.persistentrestartapps' 'http://files.boxcontrol.io/s/LBGiTBFXZn64wD4/download/DEV_AP_FirmwareBuild_1.1.0_15_debug_test_f24b0944222aeead6b0ecc4f79d807642bd6eae0.apk' 'com.wetek.provision' 'http://files.boxcontrol.io/s/GLxZAWRJyDwYeGL/download/DEV_SP_9b43e74b-1402-4fc2-b8e1-dd6b7f3e5d92_1.3_15_debug_test_375570a6ad0ea5fab7063e20edcb6cdb4199069a.apk' 'com.wetek.weupdate' 'http://files.boxcontrol.io/s/MMZXzCP8zgwfWKb/download/DEV_WeUpdate_v.2.0.43.1_1115_release.apk' 'http://files.boxcontrol.io/s/2XmC84MArMoXdxm/download/privapp-permissions-com.wetek.weupdate.xml'"
+#============================================
+# Python dependencies
+#============================================
+COPY --chown=ubuntu:ubuntu ./app/requirements.txt ./requirements.txt
+RUN pip3 install --no-cache-dir --break-system-packages -r ./requirements.txt
 
 
 #============================================
@@ -57,7 +67,6 @@ COPY --chown=ubuntu:ubuntu ./android-sdk/apks ./android-sdk/apks
 COPY --chown=ubuntu:ubuntu ./android-sdk/priv-apks ./android-sdk/priv-apks
 COPY --chown=ubuntu:ubuntu ./build_image.sh ./build_image.sh
 COPY --chown=ubuntu:ubuntu ./entrypoint.sh ./entrypoint.sh
-COPY --chown=ubuntu:ubuntu ./entrypoint.py ./entrypoint.py
 
 RUN chmod +x ./build_image.sh
 RUN chmod +x ./entrypoint.sh

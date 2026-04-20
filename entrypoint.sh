@@ -7,9 +7,6 @@ configureAdbKey() {
     fi
 }
 
-echo "Giving permissions..."
-python3 ./entrypoint.py
-
 # if [ ! -f "configured.txt" ]; then
 #     echo "Not configured"
 #     echo 1 > configured.txt

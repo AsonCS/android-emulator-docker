@@ -1,9 +1,9 @@
+# syntax=docker/dockerfile:1
+
 FROM ubuntu:24.04
 
 WORKDIR /home/ubuntu
 RUN chown -R ubuntu:ubuntu /home/ubuntu
-
-COPY --chown=ubuntu:ubuntu ./app/requirements.txt ./requirements.txt
 
 #============================================
 # Install Dependences
@@ -26,20 +26,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 #============================================
 # Python dependencies
 #============================================
+COPY --chown=ubuntu:ubuntu ./app/requirements.txt ./requirements.txt
 RUN pip3 install --no-cache-dir --break-system-packages -r ./requirements.txt
 
 
 #============================================
 # Env vars
 #============================================
-ENV ANDROID_CMD="commandlinetools-linux-14742923_latest.zip"
+ARG ANDROID_AVD_HOME
+ARG ANDROID_CMD
+ARG ANDROID_HOME
+ARG ANDROID_PATH_CMDLINE_TOOLS
+ARG ANDROID_PATH_PLATFORM_TOOLS
 
-ENV ANDROID_HOME="/home/ubuntu/android-sdk"
-ENV ANDROID_AVD_HOME="$ANDROID_HOME/.android/avd"
+ENV ANDROID_AVD_HOME=$ANDROID_AVD_HOME
+ENV ANDROID_CMD=$ANDROID_CMD
+ENV ANDROID_HOME=$ANDROID_HOME
 ENV ANDROID_SDK_ROOT=$ANDROID_HOME
-
-ENV ANDROID_PATH_CMDLINE_TOOLS="$ANDROID_HOME/cmdline-tools/latest/bin"
-ENV ANDROID_PATH_PLATFORM_TOOLS="$ANDROID_HOME/platform-tools"
+ENV ANDROID_PATH_CMDLINE_TOOLS=$ANDROID_PATH_CMDLINE_TOOLS
+ENV ANDROID_PATH_PLATFORM_TOOLS=$ANDROID_PATH_PLATFORM_TOOLS
 
 ENV PATH="$PATH:$ANDROID_PATH_CMDLINE_TOOLS:$ANDROID_PATH_PLATFORM_TOOLS"
 
