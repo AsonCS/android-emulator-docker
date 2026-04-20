@@ -6,9 +6,19 @@ python3 -m venv .venv
 
 cd ./app
 
-../.venv/bin/pip3 install -r ./requirements.txt
+bin=../.venv/bin
+if [ ! "$(ls $bin)" ];then
+    bin=../.venv/Scripts
+fi
+if [ ! "$(ls $bin)" ];then
+    bin=../.venv/Scripts
+fi
 
-exec ../.venv/bin/uvicorn main:app \
+ls $bin
+
+$bin/pip3 install -r ./requirements.txt
+
+exec $bin/uvicorn main:app \
     --host 0.0.0.0 \
     --port "$API_PORT" \
     --workers 1
