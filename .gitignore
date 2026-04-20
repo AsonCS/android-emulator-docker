@@ -3,6 +3,7 @@ android-sdk
 *.out
 apks/
 priv-apks/
+.android
 
 # Python
 __pycache__/

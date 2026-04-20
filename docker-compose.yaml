@@ -13,7 +13,7 @@ services:
       - "8001:80"
     extra_hosts:
       - host.docker.internal:host-gateway
-    command: sleep infinity
+    # command: sleep infinity
   
   emulator:
     build:
