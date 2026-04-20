@@ -6,8 +6,6 @@ REST API and tooling to run and control an Android Emulator inside Docker, with 
 
 This README documents the active project files and flow.
 
-- The `./bkp` folder is intentionally ignored (backup/experimental files).
-
 ## What This Project Provides :sparkles:
 
 - Android emulator runtime in containers
@@ -16,15 +14,14 @@ This README documents the active project files and flow.
 - Screenshot/screen-record/log/diagnostic endpoints
 - Socket.IO screencast viewer
 
-## Prerequisites :clipboard:
-
-- Docker and Docker Compose
-- Linux host with `/dev/kvm` support for emulator acceleration
-- `python3` installed (required to run local app with `run_app.sh`)
-
 ## Run The Python App Locally With run_app.sh :snake:
 
 Script: [`run_app.sh`](run_app.sh)
+
+Prerequisites :clipboard:
+
+- `python3`
+- `git`
 
 What the script does:
 
@@ -35,9 +32,22 @@ What the script does:
 
 Run it:
 
+#### Linux / WSL
+
 ```bash
+git clone https://github.com/AsonCS/android-emulator-docker.git
+cd android-emulator-docker/
 chmod +x ./run_app.sh
 ./run_app.sh
+```
+
+#### Windows (Git Bash)
+
+```bash
+git clone https://github.com/AsonCS/android-emulator-docker.git
+cd android-emulator-docker/
+chmod +x ./run_app.sh
+sh ./run_app.sh
 ```
 
 Run with custom port (default is `8001`):
@@ -52,6 +62,12 @@ After startup:
 - Swagger UI: `http://localhost:<PORT>/docs`
 - ReDoc: `http://localhost:<PORT>/redoc`
 - Screencast page: `http://localhost:<PORT>/screencast`
+
+## Prerequisites :clipboard:
+
+- Docker and Docker Compose
+- Linux host with `/dev/kvm` support for emulator acceleration
+- `python3` installed (required to run local app with `run_app.sh`)
 
 ## App Entry Point Explained (app/main.py) :gear:
 
