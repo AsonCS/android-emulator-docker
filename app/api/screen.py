@@ -60,7 +60,7 @@ class RecordStartResponse(BaseModel):
 
 class RecordStopResponse(BaseModel):
     message: str
-    device_id: str
+    device_id: Optional[str]
     files: list[str]
 
     model_config = ConfigDict(

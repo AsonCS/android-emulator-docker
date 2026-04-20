@@ -9,6 +9,8 @@ import os
 import tempfile
 import logging
 
+from typing import Optional
+
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -142,7 +144,7 @@ async def install_apk(
     grant_permissions: bool = Query(
         False, description="Automatically grant all runtime permissions (`-g` flag)"
     ),
-    device_id: str | None = Query(
+    device_id: Optional[str] = Query(
         None,
         description=(
             "ADB device identifier (serial or host:port). "
@@ -221,7 +223,7 @@ async def install_apk(
 )
 def uninstall_apk(
     req: UninstallRequest,
-    device_id: str | None = Query(
+    device_id: Optional[str] = Query(
         None,
         description=(
             "ADB device identifier (serial or host:port). "
@@ -279,7 +281,7 @@ def uninstall_apk(
 )
 def clear_app_data(
     req: ClearDataRequest,
-    device_id: str | None = Query(
+    device_id: Optional[str] = Query(
         None,
         description=(
             "ADB device identifier (serial or host:port). "

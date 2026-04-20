@@ -10,9 +10,6 @@ bin=../.venv/bin
 if [ ! "$(ls $bin)" ];then
     bin=../.venv/Scripts
 fi
-if [ ! "$(ls $bin)" ];then
-    bin=../.venv/Scripts
-fi
 
 ls $bin
 

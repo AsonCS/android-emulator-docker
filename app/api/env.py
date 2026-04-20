@@ -4,7 +4,7 @@ Environment simulation routes.
 POST /env/location – set GPS coordinates
 POST /env/network  – toggle airplane mode, Wi-Fi, or mobile data
 """
-from typing import Literal
+from typing import Literal, Optional
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
@@ -95,7 +95,7 @@ class ErrorResponse(BaseModel):
 )
 def set_location(
     req: LocationRequest,
-    device_id: str | None = Query(
+    device_id: Optional[str] = Query(
         None,
         description=(
             "ADB device identifier (serial or host:port). "
@@ -153,7 +153,7 @@ def set_location(
 )
 def set_network(
     req: NetworkRequest,
-    device_id: str | None = Query(
+    device_id: Optional[str] = Query(
         None,
         description=(
             "ADB device identifier (serial or host:port). "

@@ -1,6 +1,7 @@
 import os
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+from typing import Optional
 
 from fastapi import FastAPI, Query
 from fastapi.staticfiles import StaticFiles
@@ -131,7 +132,7 @@ async def healthcheck():
     },
 )
 async def screencast_page(
-    device_id: str | None = Query(
+    device_id: Optional[str] = Query(
         None,
         description=(
             "ADB device identifier (serial or host:port) for live screencast, "
