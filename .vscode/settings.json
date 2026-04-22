@@ -16,6 +16,7 @@
         "cmdline",
         "commandlinetools",
         "devicecontrol",
+        "DPAD",
         "dumpstate",
         "dumpsys",
         "DUMPSYS",

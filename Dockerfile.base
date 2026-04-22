@@ -59,11 +59,4 @@ RUN chmod +x ./setup_base.sh
 RUN ./setup_base.sh
 RUN chmod -R 777 /home/ubuntu
 
-
-#============================================
-# Application code
-#============================================
-LABEL maintainer="Ason CS"
-LABEL org.opencontainers.image.description="Android Emulator Docker"
-
 CMD ["sleep", "infinity"]

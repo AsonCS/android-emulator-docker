@@ -3,6 +3,7 @@
 configureAdbKey() {
     echo "configureAdbKey | ${ADB_KEY:0:92}"
     if [ ! -z "$ADB_KEY" ]; then
+        mkdir -p /home/ubuntu/.android
         echo $ADB_KEY > /home/ubuntu/.android/adbkey
     fi
 }

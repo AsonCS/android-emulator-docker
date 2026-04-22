@@ -175,6 +175,10 @@ def logcat_search(
     Both filters are applied server-side:
     - `grep` performs a case-insensitive substring match on each line.
     - `level` maps to Android logcat priority (`*:E`, `*:W`, etc.).
+
+    Examples:
+    - `?grep=okhttp.OkHttpClient`: For app's requests
+    - `?grep=E%20AndroidRuntime`: For "FATAL EXCEPTIONS"
     """
     args = ["logcat", "-d"]
 
