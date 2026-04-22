@@ -37,9 +37,6 @@ USER ubuntu
 
 RUN chmod +x ./entrypoint.sh
 
-LABEL maintainer="Ason CS"
-LABEL org.opencontainers.image.description="Android Emulator Docker"
-
 CMD ["./entrypoint.sh"]
 
 FROM ubuntu:24.04

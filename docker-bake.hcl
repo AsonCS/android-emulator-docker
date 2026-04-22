@@ -33,17 +33,47 @@ target "app" {
     tags = ["android-emulator-docker-app:latest"]
 }
 
+
+variable "app_prod_maintainer" {
+    default = "\"Ason CS\""
+}
+variable "app_prod_title" {
+    default = "\"App - Android Emulator Docker\""
+}
+variable "app_prod_description" {
+    default = "\"App Python and Adb only\""
+}
+variable "app_prod_source" {
+    default = "\"https://github.com/AsonCS/android-emulator-docker\""
+}
+variable "app_prod_documentation" {
+    default = "\"https://github.com/AsonCS/android-emulator-docker/packages\""
+}
 target "app-prod" {
     context = "."
     dockerfile = "Dockerfile.app"
     contexts = {
-        android-emulator-docker-app = "app:base"
+        android-emulator-docker-app = "target:app"
     }
     args = {
         ANDROID_HOME                = ANDROID_HOME
         ANDROID_PATH_PLATFORM_TOOLS = ANDROID_PATH_PLATFORM_TOOLS
     }
     tags = ["android-emulator-docker-app-prod:latest"]
+    annotations = [ 
+        "maintainer=${app_prod_maintainer}" ,
+        "org.opencontainers.image.title=${app_prod_title}",
+        "org.opencontainers.image.description=${app_prod_description}",
+        "org.opencontainers.image.source=${app_prod_source}",
+        "org.opencontainers.image.documentation=${app_prod_documentation}"
+    ]
+    labels = {
+      "maintainer" = app_prod_maintainer,
+      "org.opencontainers.image.title" = app_prod_title,
+      "org.opencontainers.image.description" = app_prod_description,
+      "org.opencontainers.image.source" = app_prod_source,
+      "org.opencontainers.image.documentation" = app_prod_documentation
+    }
 }
 
 target "emulator" {

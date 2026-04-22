@@ -30,6 +30,7 @@
         "nohup",
         "okhttp",
         "onefile",
+        "opencontainers",
         "procstats",
         "pyinstaller",
         "PYTHONDONTWRITEBYTECODE",

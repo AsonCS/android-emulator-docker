@@ -14,12 +14,25 @@ This README documents the active project files and flow.
 - Screenshot/screen-record/log/diagnostic endpoints
 - Socket.IO screencast viewer
 
+## Download the App Executable File :arrow_down:
+
+Prerequisites :clipboard:
+
+- `adb`
+
+[Releases](https://github.com/AsonCS/android-emulator-docker/releases)
+
+- linux-main
+- windows-main.exe
+- mac-main
+
 ## Run The Python App Locally With run_app.sh :snake:
 
 Script: [`run_app.sh`](run_app.sh)
 
 Prerequisites :clipboard:
 
+- `adb`
 - `python3`
 - `git`
 
@@ -58,11 +71,21 @@ sh ./run_app.sh 9000
 - ReDoc: `http://localhost:<PORT>/redoc`
 - Screencast page: `http://localhost:<PORT>/screencast`
 
+
+## Run Image Docker App+Adb 
+
+Prerequisites :clipboard:
+
+- `docker`
+
+[Images](https://github.com/AsonCS/android-emulator-docker/pkgs/container/android-emulator-docker)
+
+`docker run -d --rm --name=android-emulator-docker-app-prod -p=8001:80 ghcr.io/asoncs/android-emulator-docker:1.0.1`
+
 ## Prerequisites :clipboard:
 
 - Docker and Docker Compose
 - Linux host with `/dev/kvm` support for emulator acceleration
-- `python3` installed (required to run local app with `run_app.sh`)
 
 ## App Entry Point Explained (app/main.py) :gear:
 

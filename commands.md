@@ -1,7 +1,10 @@
 ## Geral
 
 - `$(set -a && source .env && set +a && docker buildx bake)`
+- `$(set -a && source .env && set +a && docker buildx bake apps)`
 - `docker compose up -d`
+- `docker tag android-emulator-docker-app-prod ghcr.io/asoncs/android-emulator-docker:<tag>`
+- `docker push ghcr.io/asoncs/android-emulator-docker:<tag>`
 
 ## App
 
