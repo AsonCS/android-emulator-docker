@@ -32,7 +32,9 @@ What the script does:
 
 Run it:
 
-#### Linux / WSL | Windows (Git Bash) | Mac
+### Linux / WSL | Windows (Git Bash) | Mac
+
+#### First time
 
 ```bash
 git clone https://github.com/AsonCS/android-emulator-docker.git
@@ -41,13 +43,15 @@ chmod +x ./run_app.sh
 sh ./run_app.sh
 ```
 
-Run with custom port (default is `8001`):
+Further times, inside the `android-emulator-docker` folder just run `sh ./run_app.sh`
+
+#### Run with custom port (default is `8001`):
 
 ```bash
-./run_app.sh 9000
+sh ./run_app.sh 9000
 ```
 
-After startup:
+#### After startup:
 
 - API base URL: `http://localhost:<PORT>/`
 - Swagger UI: `http://localhost:<PORT>/docs`
