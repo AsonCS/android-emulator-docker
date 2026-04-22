@@ -148,6 +148,7 @@ def run(args: list[str], timeout: int = 30, device_id: Optional[str] = None) -> 
             capture_output=True,
             text=True,
             timeout=timeout,
+            encoding="utf-8"
         )
         return result.stdout, result.stderr
     except subprocess.TimeoutExpired:

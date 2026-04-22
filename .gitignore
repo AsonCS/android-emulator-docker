@@ -4,6 +4,7 @@ android-sdk
 apks/
 priv-apks/
 .android
+.copilot
 
 # Python
 __pycache__/

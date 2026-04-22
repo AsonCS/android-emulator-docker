@@ -2,6 +2,7 @@
 
 API_PORT=${1:-8001}
 
+echo "Creating virtual environment..."
 python3 -m venv .venv
 
 cd ./app
@@ -11,9 +12,8 @@ if [ ! "$(ls $bin)" ];then
     bin=../.venv/Scripts
 fi
 
-ls $bin
-
-$bin/pip3 install -r ./requirements.txt
+echo "Refreshing dependencies..."
+$bin/pip3 install -r ./requirements.txt > requirements.log
 
 exec $bin/uvicorn main:app \
     --host 0.0.0.0 \

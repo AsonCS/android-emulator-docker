@@ -1,4 +1,7 @@
 .git
+.android
+.copilot
+**/*.log
 
 __pycache__/
 *.pyc
@@ -17,3 +20,15 @@ lib/
 lib64/
 main.spec
 pyvenv.cfg
+
+# IDEs
+.idea/
+*.iml
+.cache
+.dotnet
+.vscode-server
+
+# OS
+.DS_Store
+Thumbs.db
+.bash_history

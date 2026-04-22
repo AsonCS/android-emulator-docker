@@ -1,3 +1,4 @@
+import logging
 import os
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -13,6 +14,8 @@ import screencast
 from api import adb, app as app_router, diagnostics, emulator, env, files
 from api import input as input_router
 from api import logs, screen
+
+# logging.basicConfig(level=logging.DEBUG)
 
 TAGS_METADATA = [
     {
