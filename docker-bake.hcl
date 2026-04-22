@@ -1,5 +1,9 @@
 group "default" {
-    targets = ["base", "app", "emulator"]
+    targets = ["base", "app", "app-prod", "emulator"]
+}
+
+group "apps" {
+    targets = ["base", "app", "app-prod"]
 }
 
 target "base" {
@@ -21,11 +25,25 @@ target "app" {
     contexts = {
         android-emulator-docker-base = "target:base"
     }
+    target = "builder"
     args = {
         ANDROID_HOME                = ANDROID_HOME
         ANDROID_PATH_PLATFORM_TOOLS = ANDROID_PATH_PLATFORM_TOOLS
     }
     tags = ["android-emulator-docker-app:latest"]
+}
+
+target "app-prod" {
+    context = "."
+    dockerfile = "Dockerfile.app"
+    contexts = {
+        android-emulator-docker-app = "app:base"
+    }
+    args = {
+        ANDROID_HOME                = ANDROID_HOME
+        ANDROID_PATH_PLATFORM_TOOLS = ANDROID_PATH_PLATFORM_TOOLS
+    }
+    tags = ["android-emulator-docker-app-prod:latest"]
 }
 
 target "emulator" {

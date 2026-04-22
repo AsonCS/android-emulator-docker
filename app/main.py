@@ -8,6 +8,7 @@ from fastapi import FastAPI, Query
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from socketio import ASGIApp
+import uvicorn
 
 import config
 import screencast
@@ -173,3 +174,6 @@ screencast.register_screencast_handlers(sio)
 
 # Wrap FastAPI with Socket.IO ASGI middleware
 app = ASGIApp(sio, application, socketio_path="socket.io")
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=config.API_PORT, workers=1)

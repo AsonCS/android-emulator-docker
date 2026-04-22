@@ -8,6 +8,7 @@
         "avdmanager",
         "AVDMANAGER",
         "avds",
+        "binutils",
         "bluetooth",
         "bugreport",
         "bugreports",
@@ -18,6 +19,7 @@
         "dumpstate",
         "dumpsys",
         "DUMPSYS",
+        "fastapi",
         "healthcheck",
         "Healthcheck",
         "libgles",
@@ -27,10 +29,13 @@
         "netstats",
         "nohup",
         "okhttp",
+        "onefile",
         "procstats",
-        "redoc",
+        "pyinstaller",
         "PYTHONDONTWRITEBYTECODE",
+        "PYTHONPATH",
         "PYTHONUNBUFFERED",
+        "redoc",
         "reuseaddr",
         "sdkmanager",
         "SDKMANAGER",
@@ -38,6 +43,7 @@
         "socketio",
         "uroot",
         "uvicorn",
+        "venv",
         "wifi"
     ]
 }

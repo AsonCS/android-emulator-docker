@@ -6,7 +6,11 @@ services:
       dockerfile: Dockerfile.app
     container_name: android-emulator-docker-app
     volumes:
-      - .:/home/ubuntu
+      - ./.devcontainer:/home/ubuntu/.devcontainer
+      - ./.env:/home/ubuntu/.env
+      - ./app:/home/ubuntu/app
+      - ./docker-compose.yaml:/home/ubuntu/docker-compose.yaml
+      - ./Dockerfile.app:/home/ubuntu/Dockerfile.app
     env_file:
       - ./.env
     ports:
