@@ -2,6 +2,9 @@
 
 API_PORT=${1:-8001}
 
+echo "Updating source..."
+git pull origin main
+
 echo "Creating virtual environment..."
 python3 -m venv .venv
 
