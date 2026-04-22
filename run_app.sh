@@ -1,8 +1,6 @@
 #!/bin/bash
 
-# $(export PYTHONPATH=$(pwd)/../.venv && pyinstaller --onefile --add-data ./static:./static --hidden-import fastapi --hidden-import uvicorn --hidden-import python3.12 --hidden-import websockets --collect-all fastapi --collect-all uvicorn --collect-all python3.12 --collect-all websockets main.py)
-
-API_PORT=${1:-8001}
+export API_PORT=${1:-8001}
 
 echo "Updating source..."
 git pull origin main
