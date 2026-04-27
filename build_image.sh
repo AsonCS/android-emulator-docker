@@ -21,11 +21,17 @@ echo "RUN_ONLY $RUN_ONLY"
 
 createEmulator() {
     echo "createEmulator | $ANDROID_PATH_CMDLINE_TOOLS $ANDROID_AVD_HOME $EMULATOR_NAME $EMULATOR_DEVICE $ANDROID_API_VERSION $EMULATOR_TARGET $EMULATOR_ARCH"
-    mkdir -p $ANDROID_AVD_HOME || echo "$ANDROID_AVD_HOME exixts"
-    $ANDROID_PATH_CMDLINE_TOOLS/avdmanager --verbose create avd --force -n $EMULATOR_NAME -d $EMULATOR_DEVICE -k "system-images;android-$ANDROID_API_VERSION;$EMULATOR_TARGET;$EMULATOR_ARCH"
-    sed -i "s/hw.lcd.height=1600/hw.lcd.height=1080/g" "$ANDROID_AVD_HOME/$EMULATOR_NAME.avd/config.ini"
+    mkdir -p $ANDROID_AVD_HOME || echo "$ANDROID_AVD_HOME exists"
+    $ANDROID_PATH_CMDLINE_TOOLS/avdmanager \
+        --verbose \
+        create avd \
+        --force \
+        -n "$EMULATOR_NAME" \
+        -d "$EMULATOR_DEVICE" \
+        -k "system-images;android-$ANDROID_API_VERSION;$EMULATOR_TARGET;$EMULATOR_ARCH"
+    # sed -i "s/hw.lcd.height=1600/hw.lcd.height=1080/g" "$ANDROID_AVD_HOME/$EMULATOR_NAME.avd/config.ini"
     sed -i "s/hw.initialOrientation=portrait/hw.initialOrientation=landscape/g" "$ANDROID_AVD_HOME/$EMULATOR_NAME.avd/config.ini"
-    sed -i "s/hw.lcd.width=2560/hw.lcd.width=1920/g" "$ANDROID_AVD_HOME/$EMULATOR_NAME.avd/config.ini"
+    # sed -i "s/hw.lcd.width=2560/hw.lcd.width=1920/g" "$ANDROID_AVD_HOME/$EMULATOR_NAME.avd/config.ini"
 }
 
 waitForDevice() {
@@ -108,8 +114,7 @@ configPrivApks() {
                 if [ -f "$file" ]; then
                     if [ "${file##*.}" == "apk" ]; then
                         apk=$(basename $file)
-                        apk_name="${apk%%.*}"
-                        remote_dir="$remote_apks_dir/$apk_name"
+                        remote_dir="$remote_apks_dir/$package"
                         pushFile $remote_dir $apk $file
                     fi
                     if [ "${file##*.}" == "xml" ]; then
@@ -121,7 +126,6 @@ configPrivApks() {
         fi
     done
     $ANDROID_PATH_PLATFORM_TOOLS/adb reboot
-    waitForDevice
 }
 
 if [ "$RUN_ONLY" == "true" ]; then

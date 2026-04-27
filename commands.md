@@ -4,7 +4,9 @@
 - `$(set -a && source .env && set +a && docker buildx bake apps)`
 - `docker compose up -d`
 - `docker tag android-emulator-docker-app-prod ghcr.io/asoncs/android-emulator-docker:<tag>`
+- `docker tag android-emulator-docker-emulator ghcr.io/agilecontent/adm-devicecontrol:<tag>`
 - `docker push ghcr.io/asoncs/android-emulator-docker:<tag>`
+- `docker push ghcr.io/agilecontent/adm-devicecontrol:<tag>`
 
 ## App
 

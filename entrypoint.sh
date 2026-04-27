@@ -18,12 +18,12 @@ configureAdbKey() {
 #     ./build_image.sh "-no-audio -no-window" "true"
 # fi
 
-configureAdbKey
-./build_image.sh "-no-audio -no-window"
-
+pkill socat
 # nohup socat tcp-listen:5594,bind=0.0.0.0,reuseaddr,fork tcp:localhost:5554 &> socat_5594.log &
 nohup socat tcp-listen:5595,bind=0.0.0.0,reuseaddr,fork tcp:localhost:5555 &> socat_5595.log &
-# pkill socat
+
+configureAdbKey
+./build_image.sh "-no-audio -no-window"
 
 cd ./app
 

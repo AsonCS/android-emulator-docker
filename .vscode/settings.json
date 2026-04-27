@@ -32,6 +32,8 @@
         "okhttp",
         "onefile",
         "opencontainers",
+        "persistentrestartapps",
+        "pkill",
         "procstats",
         "pyinstaller",
         "PYTHONDONTWRITEBYTECODE",
@@ -46,6 +48,8 @@
         "uroot",
         "uvicorn",
         "venv",
+        "wetek",
+        "weupdate",
         "wifi"
     ]
 }
