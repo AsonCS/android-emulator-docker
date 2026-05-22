@@ -21,6 +21,7 @@
         "dumpsys",
         "DUMPSYS",
         "fastapi",
+        "getprop",
         "healthcheck",
         "Healthcheck",
         "libgles",
