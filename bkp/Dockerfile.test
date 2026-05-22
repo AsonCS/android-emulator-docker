@@ -1,0 +1,22 @@
+FROM ubuntu:24.04 AS aaa
+
+COPY ./bkp/test.sh /test.sh
+RUN chmod 777 /test.sh
+RUN echo aaa
+
+CMD [ "tail", "-f", "/dev/null"]
+
+FROM aaa AS bbb
+
+RUN /test.sh
+RUN echo bbb
+
+CMD [ "tail", "-f", "/dev/null"]
+
+FROM bbb AS ccc
+
+RUN echo ccc
+
+CMD [ "tail", "-f", "/dev/null"]
+# docker build --no-cache --progress=plain --target bbb -t android-emulator-docker-test -f ./bkp/Dockerfile.test .
+# docker run -d --rm --name android-emulator-docker-test android-emulator-docker-test tail -f /dev/null

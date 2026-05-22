@@ -1,0 +1,64 @@
+android-sdk
+*.log
+*.out
+apks/
+priv-apks/
+.android
+.copilot
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+wheels/
+.eggs/
+lib/
+lib64/
+lib64
+app/bin/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# mypy / type checkers
+.mypy_cache/
+.dmypy.json
+.pyre/
+
+# IDEs
+.idea/
+*.iml
+.cache
+.dotnet
+.vscode-server
+
+# Temp / runtime artefacts
+/tmp/
+*.mp4
+*.png
+*.apk
+
+# OS
+.DS_Store
+Thumbs.db
+.bash_history

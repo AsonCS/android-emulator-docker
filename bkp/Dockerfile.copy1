@@ -1,0 +1,75 @@
+FROM ubuntu:24.04
+
+LABEL maintainer="Ason CS"
+
+ARG BUILD_TOOLS="34.0.0"
+
+COPY . .
+
+
+#=============================
+# Install Dependences
+#=============================
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip \
+    openjdk-21-jdk-headless \
+    libpulse0 \
+    libgles2 \
+    xvfb \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean;
+
+
+#============================================
+# Python dependencies
+#============================================
+WORKDIR /app
+RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
+
+
+#==============================
+# Set JAVA_HOME - SDK
+#==============================
+ENV ANDROID_SDK_ROOT=/root/sdk/android
+RUN mkdir -p $ANDROID_SDK_ROOT
+ENV ANDROID_HOME=$ANDROID_SDK_ROOT
+ENV ANDROID_AVD_HOME=$ANDROID_SDK_ROOT/.android/avd
+RUN mkdir -p $ANDROID_AVD_HOME
+ENV PATH="$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/emulator:$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/build-tools/${BUILD_TOOLS}"
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV API_PORT=8000
+
+
+#============================================
+# Create required emulator
+#============================================
+ARG EMULATOR_NAME="tablet"
+ARG EMULATOR_DEVICE="medium_tablet"
+ARG EMULATOR_SERIAL="emulator-5554"
+ARG EMULATOR_IMAGE="system-images;android-34;default;x86_64"
+ENV EMULATOR_NAME=$EMULATOR_NAME
+ENV DEVICE_NAME=$EMULATOR_DEVICE
+ENV EMULATOR_SERIAL=$EMULATOR_SERIAL
+
+RUN avdmanager --verbose create avd --force -n "$EMULATOR_NAME" -d "$EMULATOR_DEVICE" -k "$EMULATOR_IMAGE"
+RUN sed -i "s/hw.lcd.height=1600/hw.lcd.height=1080/g" "$ANDROID_AVD_HOME/$EMULATOR_NAME.avd/config.ini"
+RUN sed -i "s/hw.initialOrientation=portrait/hw.initialOrientation=landscape/g" "$ANDROID_AVD_HOME/$EMULATOR_NAME.avd/config.ini"
+RUN sed -i "s/hw.lcd.width=2560/hw.lcd.width=1920/g" "$ANDROID_AVD_HOME/$EMULATOR_NAME.avd/config.ini"
+
+
+#============================================
+# Application code
+#============================================
+RUN chmod +x ./entrypoint.sh
+
+EXPOSE 5554 5555 8000
+
+CMD ["./entrypoint.sh"]
+
+# docker build -t android-emulator-docker .
+# docker run -d --privileged --name android-emulator-docker -p 5555:5555 -p 5554:5554 -p 8000:8000 android-emulator-docker
+# docker run -d --privileged --name android-emulator-docker -p 5555:5555 -p 5554:5554 -p 8000:8000 android-emulator-docker tail -f /dev/null
+# docker run -d --privileged --name android-emulator-docker -p 5555:5555 -p 5554:5554 -p 8000:8000 -v ./app:/app android-emulator-docker tail -f /dev/null
+# docker exec -u root -t -i android-emulator-docker /bin/bash

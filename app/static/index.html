@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android Emulator Screencast</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 1000px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ff6b6b;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: #51cf66;
+            animation: pulse-green 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        @keyframes pulse-green {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            align-items: center;
+            flex-wrap: wrap;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            color: #333;
+            min-width: 100px;
+        }
+
+        .control-group input {
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .control-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #667eea;
+            color: white;
+        }
+
+        .button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .button:active {
+            transform: translateY(0);
+        }
+
+        .button.secondary {
+            background: #2f7a5d;
+        }
+
+        .button.secondary:hover {
+            background: #26654d;
+            box-shadow: 0 4px 12px rgba(47, 122, 93, 0.3);
+        }
+
+        .screen-container {
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            width: 100%;
+            min-height: 260px;
+            max-height: 72vh;
+        }
+
+        .screen-container img {
+            width: auto;
+            height: auto;
+            max-width: 100%;
+            max-height: 72vh;
+            object-fit: contain;
+            display: none;
+            cursor: crosshair;
+            touch-action: none;
+            user-select: none;
+        }
+
+        .screen-container img.active {
+            display: block;
+        }
+
+        .loading {
+            color: #999;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .error {
+            background: #ffe0e0;
+            color: #d32f2f;
+            padding: 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+        }
+
+        .logcat-panel {
+            margin-top: 20px;
+            border: 2px solid #e6e6e6;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #101417;
+            color: #e6edf3;
+        }
+
+        .logcat-toolbar {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 12px;
+            background: #1a232a;
+            border-bottom: 1px solid #2c3a45;
+        }
+
+        .logcat-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #d7dee5;
+        }
+
+        .logcat-filter {
+            flex: 1;
+            min-width: 220px;
+            padding: 8px 10px;
+            border: 1px solid #3b4d5c;
+            border-radius: 6px;
+            background: #0f151a;
+            color: #e6edf3;
+        }
+
+        .logcat-filter:focus {
+            outline: none;
+            border-color: #58a6ff;
+        }
+
+        .logcat-stream {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.45;
+            padding: 12px;
+            min-height: 180px;
+            max-height: 260px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .stat-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        @media (max-width: 600px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .control-group {
+                justify-content: space-between;
+            }
+
+            .button {
+                width: 100%;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📱 Android Emulator Screencast</h1>
+            <div class="status-indicator">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Disconnected</span>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="error" id="errorBox"></div>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label for="intervalInput">Screenshot Interval (s):</label>
+                    <input type="number" id="intervalInput" value="1" min="0.1" max="10" step="0.1">
+                </div>
+                <button class="button" onclick="updateInterval()">Update Interval</button>
+                <button class="button" onclick="getStatus()" style="background: #764ba2;">Get Status</button>
+            </div>
+
+            <div class="screen-container">
+                <img id="screenshot" class="active" alt="Emulator screenshot">
+                <div class="loading" id="loading">Connecting to emulator...</div>
+            </div>
+
+            <div class="logcat-panel">
+                <div class="logcat-toolbar">
+                    <label class="logcat-toggle" for="logcatToggle">
+                        <input type="checkbox" id="logcatToggle">
+                        Stream logcat
+                    </label>
+                    <input
+                        type="text"
+                        id="logcatFilter"
+                        class="logcat-filter"
+                        placeholder="Filter logs (case-insensitive contains)"
+                    >
+                    <button class="button secondary" id="applyLogcatFilterBtn" type="button">Apply Filter</button>
+                    <button class="button" id="clearLogcatBtn" type="button" style="background: #5f6b76;">Clear View</button>
+                </div>
+                <div class="logcat-stream" id="logcatStream">Logcat streaming is disabled.</div>
+            </div>
+
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="frameCount">0</div>
+                    <div class="stat-label">Frames Received</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="currentInterval">1.0</div>
+                    <div class="stat-label">Interval (s)</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="clientCount">0</div>
+                    <div class="stat-label">Connected Clients</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const pageParams = new URLSearchParams(window.location.search);
+        const selectedDeviceId = (pageParams.get("device_id") || "").trim();
+        const socket = io({
+            auth: selectedDeviceId ? { device_id: selectedDeviceId } : {},
+        });
+        let frameCount = 0;
+        let isConnected = false;
+        let pointerStart = null;
+        let logcatEnabled = false;
+        let logcatBuffer = [];
+        const MAX_LOGCAT_LINES = 600;
+        let pendingLogcatLines = [];
+        let logcatRenderScheduled = false;
+
+        const SWIPE_DISTANCE_THRESHOLD = 12;
+        const MIN_SWIPE_DURATION_MS = 80;
+
+        function buildApiUrl(path) {
+            const url = new URL(path, window.location.origin);
+            if (selectedDeviceId) {
+                url.searchParams.set("device_id", selectedDeviceId);
+            }
+            return `${url.pathname}${url.search}`;
+        }
+
+        // Connection handlers
+        socket.on("connect", () => {
+            isConnected = true;
+            updateStatusIndicator();
+            showError("");
+            getStatus();
+            console.log("Connected to screencast server");
+        });
+
+        socket.on("disconnect", () => {
+            isConnected = false;
+            updateStatusIndicator();
+            showError("Connection lost. Reconnecting...");
+        });
+
+        // Screenshot handler
+        socket.on("screenshot", (data) => {
+            const img = document.getElementById("screenshot");
+            const loading = document.getElementById("loading");
+            img.src = `data:image/png;base64,${data.image}`;
+            img.classList.add("active");
+            loading.style.display = "none";
+            frameCount++;
+            document.getElementById("frameCount").textContent = frameCount;
+        });
+
+        // Interval update confirmation
+        socket.on("interval_updated", (data) => {
+            document.getElementById("currentInterval").textContent = data.interval.toFixed(1);
+            showError("");
+        });
+
+        // Status update
+        socket.on("status", (data) => {
+            document.getElementById("clientCount").textContent = data.connected_clients;
+            document.getElementById("currentInterval").textContent = data.screenshot_interval.toFixed(1);
+            const toggle = document.getElementById("logcatToggle");
+            const filterInput = document.getElementById("logcatFilter");
+            if (typeof data.logcat_enabled === "boolean") {
+                logcatEnabled = data.logcat_enabled;
+                toggle.checked = data.logcat_enabled;
+            }
+            if (typeof data.logcat_filter === "string") {
+                filterInput.value = data.logcat_filter;
+            }
+            if (typeof data.device_id === "string" && data.device_id) {
+                showError(`Active: ${data.broadcast_active ? "Yes" : "No"} | Device: ${data.device_id}`);
+                return;
+            }
+            showError(`Active: ${data.broadcast_active ? "Yes" : "No"}`);
+        });
+
+        socket.on("logcat_status", (data) => {
+            logcatEnabled = !!data.enabled;
+            const toggle = document.getElementById("logcatToggle");
+            const filterInput = document.getElementById("logcatFilter");
+            toggle.checked = logcatEnabled;
+            if (typeof data.filter === "string") {
+                filterInput.value = data.filter;
+            }
+            renderLogcatPlaceholder();
+        });
+
+        socket.on("logcat_lines", (data) => {
+            if (!logcatEnabled || !data || !Array.isArray(data.lines) || data.lines.length === 0) {
+                return;
+            }
+            pendingLogcatLines.push(...data.lines);
+            scheduleLogcatRender();
+        });
+
+        // Error handler
+        socket.on("error", (data) => {
+            showError(`Error: ${data.message}`);
+            console.error("Socket error:", data);
+        });
+
+        // UI Functions
+        function updateStatusIndicator() {
+            const dot = document.getElementById("statusDot");
+            const text = document.getElementById("statusText");
+            if (isConnected) {
+                dot.classList.add("connected");
+                text.textContent = "Connected";
+            } else {
+                dot.classList.remove("connected");
+                text.textContent = "Disconnected";
+            }
+        }
+
+        function updateInterval() {
+            const interval = parseFloat(document.getElementById("intervalInput").value);
+            if (isNaN(interval) || interval < 0.1 || interval > 10) {
+                showError("Interval must be between 0.1 and 10 seconds");
+                return;
+            }
+            socket.emit("set_interval", { interval });
+        }
+
+        function getStatus() {
+            socket.emit("get_status");
+        }
+
+        function showError(message) {
+            const errorBox = document.getElementById("errorBox");
+            if (message) {
+                errorBox.textContent = message;
+                errorBox.classList.add("show");
+            } else {
+                errorBox.classList.remove("show");
+            }
+        }
+
+        function renderLogcatPlaceholder() {
+            const stream = document.getElementById("logcatStream");
+            if (!logcatEnabled) {
+                stream.textContent = "Logcat streaming is disabled.";
+                return;
+            }
+
+            if (logcatBuffer.length === 0 && pendingLogcatLines.length === 0) {
+                stream.textContent = "Logcat streaming enabled. Waiting for lines...";
+            }
+        }
+
+        function scheduleLogcatRender() {
+            if (logcatRenderScheduled) {
+                return;
+            }
+            logcatRenderScheduled = true;
+            requestAnimationFrame(() => {
+                logcatRenderScheduled = false;
+                flushPendingLogcatLines();
+            });
+        }
+
+        function flushPendingLogcatLines() {
+            if (!pendingLogcatLines.length) {
+                return;
+            }
+
+            const stream = document.getElementById("logcatStream");
+            const shouldAutoScroll = stream.scrollTop + stream.clientHeight >= stream.scrollHeight - 8;
+
+            logcatBuffer.push(...pendingLogcatLines);
+            pendingLogcatLines = [];
+
+            if (logcatBuffer.length > MAX_LOGCAT_LINES) {
+                logcatBuffer = logcatBuffer.slice(logcatBuffer.length - MAX_LOGCAT_LINES);
+            }
+
+            stream.textContent = logcatBuffer.join("\n");
+
+            if (shouldAutoScroll) {
+                stream.scrollTop = stream.scrollHeight;
+            }
+        }
+
+        function sendLogcatConfig() {
+            const filterValue = document.getElementById("logcatFilter").value.trim();
+            socket.emit("set_logcat", {
+                enabled: logcatEnabled,
+                filter: filterValue,
+            });
+        }
+
+        function setupLogcatControls() {
+            const toggle = document.getElementById("logcatToggle");
+            const filterInput = document.getElementById("logcatFilter");
+            const applyBtn = document.getElementById("applyLogcatFilterBtn");
+            const clearBtn = document.getElementById("clearLogcatBtn");
+
+            toggle.checked = false;
+            logcatEnabled = false;
+            renderLogcatPlaceholder();
+
+            toggle.addEventListener("change", () => {
+                logcatEnabled = toggle.checked;
+                if (!logcatEnabled) {
+                    pendingLogcatLines = [];
+                }
+                renderLogcatPlaceholder();
+                sendLogcatConfig();
+            });
+
+            applyBtn.addEventListener("click", () => {
+                sendLogcatConfig();
+            });
+
+            filterInput.addEventListener("keydown", (event) => {
+                if (event.key === "Enter") {
+                    sendLogcatConfig();
+                }
+            });
+
+            clearBtn.addEventListener("click", () => {
+                pendingLogcatLines = [];
+                logcatBuffer = [];
+                renderLogcatPlaceholder();
+            });
+        }
+
+        function clamp(value, min, max) {
+            return Math.min(Math.max(value, min), max);
+        }
+
+        function getEmulatorCoordinatesFromEvent(event) {
+            const img = document.getElementById("screenshot");
+            if (!img || img.naturalWidth === 0 || img.naturalHeight === 0) {
+                return null;
+            }
+
+            const rect = img.getBoundingClientRect();
+            if (rect.width <= 0 || rect.height <= 0) {
+                return null;
+            }
+
+            const xOnImage = clamp(event.clientX - rect.left, 0, rect.width);
+            const yOnImage = clamp(event.clientY - rect.top, 0, rect.height);
+
+            const x = Math.round((xOnImage / rect.width) * img.naturalWidth);
+            const y = Math.round((yOnImage / rect.height) * img.naturalHeight);
+
+            return {
+                x: clamp(x, 0, img.naturalWidth - 1),
+                y: clamp(y, 0, img.naturalHeight - 1),
+            };
+        }
+
+        async function sendTap(x, y) {
+            const response = await fetch(buildApiUrl("/input/tap"), {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ x, y }),
+            });
+
+            if (!response.ok) {
+                const payload = await response.json().catch(() => ({}));
+                throw new Error(payload.detail || "Failed to send tap event");
+            }
+        }
+
+        async function sendSwipe(x1, y1, x2, y2, durationMs) {
+            const response = await fetch(buildApiUrl("/input/swipe"), {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    x1,
+                    y1,
+                    x2,
+                    y2,
+                    duration_ms: durationMs,
+                }),
+            });
+
+            if (!response.ok) {
+                const payload = await response.json().catch(() => ({}));
+                throw new Error(payload.detail || "Failed to send swipe event");
+            }
+        }
+
+        async function handlePointerUp(event) {
+            const img = document.getElementById("screenshot");
+            if (!pointerStart) {
+                return;
+            }
+
+            const endCoords = getEmulatorCoordinatesFromEvent(event);
+            const endClientX = event.clientX;
+            const endClientY = event.clientY;
+            const start = pointerStart;
+            pointerStart = null;
+
+            if (!endCoords) {
+                return;
+            }
+
+            const dx = endClientX - start.clientX;
+            const dy = endClientY - start.clientY;
+            const distance = Math.hypot(dx, dy);
+
+            try {
+                if (distance < SWIPE_DISTANCE_THRESHOLD) {
+                    await sendTap(start.coords.x, start.coords.y);
+                } else {
+                    const elapsed = Date.now() - start.time;
+                    const durationMs = Math.max(MIN_SWIPE_DURATION_MS, elapsed);
+                    await sendSwipe(
+                        start.coords.x,
+                        start.coords.y,
+                        endCoords.x,
+                        endCoords.y,
+                        durationMs
+                    );
+                }
+                showError("");
+            } catch (err) {
+                showError(`Input error: ${err.message}`);
+            } finally {
+                if (img.hasPointerCapture(event.pointerId)) {
+                    img.releasePointerCapture(event.pointerId);
+                }
+            }
+        }
+
+        function setupImageInputControls() {
+            const img = document.getElementById("screenshot");
+
+            img.addEventListener("pointerdown", (event) => {
+                if (!img.classList.contains("active")) {
+                    return;
+                }
+
+                const coords = getEmulatorCoordinatesFromEvent(event);
+                if (!coords) {
+                    return;
+                }
+
+                pointerStart = {
+                    clientX: event.clientX,
+                    clientY: event.clientY,
+                    coords,
+                    time: Date.now(),
+                };
+
+                img.setPointerCapture(event.pointerId);
+                event.preventDefault();
+            });
+
+            img.addEventListener("pointerup", (event) => {
+                handlePointerUp(event);
+            });
+
+            img.addEventListener("pointercancel", () => {
+                pointerStart = null;
+            });
+        }
+
+        // Initialize
+        updateStatusIndicator();
+        setupImageInputControls();
+        setupLogcatControls();
+    </script>
+</body>
+</html>

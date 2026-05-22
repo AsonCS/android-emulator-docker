@@ -1,0 +1,62 @@
+# syntax=docker/dockerfile:1
+
+FROM ubuntu:24.04
+
+WORKDIR /home/ubuntu
+RUN chown -R ubuntu:ubuntu /home/ubuntu
+
+#============================================
+# Install Dependences
+#============================================
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip \
+    libpython3.12 \
+    openjdk-21-jdk-headless \
+    libpulse0 \
+    libgles2 \
+    xvfb \
+    wget \
+    unzip \
+    curl \
+    socat \
+    binutils \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean;
+
+
+#============================================
+# Python dependencies
+#============================================
+COPY --chown=ubuntu:ubuntu ./app/requirements.txt ./requirements.txt
+RUN pip3 install --no-cache-dir --break-system-packages -r ./requirements.txt
+
+
+#============================================
+# Env vars
+#============================================
+ARG ANDROID_AVD_HOME
+ARG ANDROID_CMD
+ARG ANDROID_HOME
+ARG ANDROID_PATH_CMDLINE_TOOLS
+ARG ANDROID_PATH_PLATFORM_TOOLS
+
+ENV ANDROID_AVD_HOME=$ANDROID_AVD_HOME
+ENV ANDROID_CMD=$ANDROID_CMD
+ENV ANDROID_HOME=$ANDROID_HOME
+ENV ANDROID_SDK_ROOT=$ANDROID_HOME
+ENV ANDROID_PATH_CMDLINE_TOOLS=$ANDROID_PATH_CMDLINE_TOOLS
+ENV ANDROID_PATH_PLATFORM_TOOLS=$ANDROID_PATH_PLATFORM_TOOLS
+
+ENV PATH="$PATH:$ANDROID_PATH_CMDLINE_TOOLS:$ANDROID_PATH_PLATFORM_TOOLS"
+
+
+#============================================
+# Configure Android SDK
+#============================================
+COPY --chown=ubuntu:ubuntu ./setup_base.sh ./setup_base.sh
+RUN chmod +x ./setup_base.sh
+RUN ./setup_base.sh
+RUN chmod -R 777 /home/ubuntu
+
+CMD ["sleep", "infinity"]

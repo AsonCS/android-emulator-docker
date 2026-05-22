@@ -1,0 +1,34 @@
+.git
+.android
+.copilot
+**/*.log
+
+__pycache__/
+*.pyc
+*.pyo
+.env
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+/tmp/
+
+bin/
+lib/
+lib64/
+main.spec
+pyvenv.cfg
+
+# IDEs
+.idea/
+*.iml
+.cache
+.dotnet
+.vscode-server
+
+# OS
+.DS_Store
+Thumbs.db
+.bash_history
