@@ -281,7 +281,7 @@ def key_event(
     """
     Simulate a hardware key press on the emulator.
 
-    Accepts either a named keycode (e.g. `KEYCODE_POWER`, `KEYCODE_HOME`, `KEYCODE_BACK`, `KEYCODE_POWER`)
+    Accepts either a named keycode (e.g. `KEYCODE_POWER`, `KEYCODE_HOME`, `KEYCODE_BACK`, `KEYCODE_POWER`, `KEYCODE_DPAD_CENTER`, `KEYCODE_DPAD_DOWN`, `KEYCODE_DPAD_UP`, `KEYCODE_DPAD_LEFT`, `KEYCODE_DPAD_RIGHT`)
     or a raw integer keycode. The full list of Android keycodes is available at
     [https://developer.android.com/reference/android/view/KeyEvent](https://developer.android.com/reference/android/view/KeyEvent).
     """

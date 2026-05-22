@@ -16,10 +16,12 @@
         "cmdline",
         "commandlinetools",
         "devicecontrol",
+        "DPAD",
         "dumpstate",
         "dumpsys",
         "DUMPSYS",
         "fastapi",
+        "getprop",
         "healthcheck",
         "Healthcheck",
         "libgles",
@@ -31,6 +33,8 @@
         "okhttp",
         "onefile",
         "opencontainers",
+        "persistentrestartapps",
+        "pkill",
         "procstats",
         "pyinstaller",
         "PYTHONDONTWRITEBYTECODE",
@@ -45,6 +49,8 @@
         "uroot",
         "uvicorn",
         "venv",
+        "wetek",
+        "weupdate",
         "wifi"
     ]
 }

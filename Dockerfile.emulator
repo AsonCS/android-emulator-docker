@@ -39,13 +39,6 @@ ENV PATH="$PATH:$ANDROID_PATH_BUILD_TOOLS:$ANDROID_PATH_EMULATOR"
 
 
 #============================================
-# Python dependencies
-#============================================
-COPY --chown=ubuntu:ubuntu ./app/requirements.txt ./requirements.txt
-RUN pip3 install --no-cache-dir --break-system-packages -r ./requirements.txt
-
-
-#============================================
 # Configure Android SDK
 #============================================
 COPY --chown=ubuntu:ubuntu ./setup.sh ./setup.sh
@@ -70,8 +63,5 @@ COPY --chown=ubuntu:ubuntu ./entrypoint.sh ./entrypoint.sh
 
 RUN chmod +x ./build_image.sh
 RUN chmod +x ./entrypoint.sh
-
-LABEL maintainer="Ason CS"
-LABEL org.opencontainers.image.description="Android Emulator Docker"
 
 CMD ["./entrypoint.sh"]
